@@ -79,6 +79,10 @@ Given positive integers $A, B$ satisfying $A \ge B$, let $(A',B') = (B,A \bmod B
 
 \begin{enumerate}
     \item (\textbf{5 points}) Prove that $A' + B' \le \frac{2}{3}(A + B)$. Conclude that starting from $(A,B)$, Euclid's algorithm terminates after at most $\log_{3/2}(A+B)$ steps.
+      \begin{quote}
+        \color{purple}
+        Proof goes here
+      \end{quote}
     \item (\textbf{3 points}) In lieu of $A+B$, consider a more general function $g(A,B) = A + \beta B$ for $\beta > 0$. Let $A = QB+R$, where $R$ is the remainder and $Q$ is the quotient when dividing $A$ by $B$. Give an exact expression for $L' = g(A',B')$ solely in terms of $B,R,\beta$, and give a lower bound $L$ for $g(A,B)$ solely in terms of $B, R, \beta$. Briefly justify your answer
     \item (\textbf{5 points}) Define a choice of $\beta$ for which the ratio $L'/L$ in the previous question is always the same regardless of $B,R$. Prove your answer. (Note: $\beta$ and this ratio will be irrational numbers)
     \item (\textbf{5 points}) Use this choice of $\beta$ to prove an improved upper bound on the number of steps of Euclid's algorithm starting from $(A,B)$.
