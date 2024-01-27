@@ -47,23 +47,25 @@ struct Testable {
     pub algo: fn(FibSz) -> FibSz,
 }
 
+const ALGOS: [Testable; 3] = [
+    Testable {
+        name: "Recursive",
+        algo: fib_rec,
+    },
+    Testable {
+        name: "Iterative",
+        algo: fib_iter,
+    },
+    Testable {
+        name: "Matrix",
+        algo: fib_mtx,
+    },
+];
+
 const TIME_LIMIT: Duration = Duration::from_secs(16);
 
 fn main() {
-    for algorithm in [
-        Testable {
-            name: "Recursive",
-            algo: fib_rec,
-        },
-        Testable {
-            name: "Iterative",
-            algo: fib_iter,
-        },
-        Testable {
-            name: "Matrix",
-            algo: fib_mtx,
-        },
-    ] {
+    for algorithm in ALGOS {
         let mut fib_num: u64 = 1;
         let timer = Instant::now();
         loop {
