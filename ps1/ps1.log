@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  26 JAN 2024 01:05
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  28 JAN 2024 02:16
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -336,6 +336,23 @@ LaTeX Font Info:    Redeclaring math accent \mathring on input line 269.
 Package: ulem 2019/11/18
 \ULdepth=\dimen153
 )
+(/usr/local/texlive/2023/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2021/09/16 v1.2d Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/texlive/2023/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2022/03/10 v1.4e Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/texlive/2023/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2021/08/11 v1.11 sin cos tan (DPC)
+)
+(/usr/local/texlive/2023/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 107.
+)
+\Gin@req@height=\dimen154
+\Gin@req@width=\dimen155
+)
 (/usr/local/texlive/2023/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2023-01-16 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count280
@@ -385,22 +402,31 @@ LaTeX Font Info:    ... okay on input line 32.
 (/usr/local/texlive/2023/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count281
-\scratchdimen=\dimen154
+\scratchdimen=\dimen156
 \scratchbox=\box60
 \nofMPsegments=\count282
 \nofMParguments=\count283
 \everyMPshowfont=\toks28
 \MPscratchCnt=\count284
-\MPscratchDim=\dimen155
+\MPscratchDim=\dimen157
 \MPnumerator=\count285
 \makeMPintoPDFobject=\count286
 \everyMPtoPDFconversion=\toks29
-)
+) (/usr/local/texlive/2023/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
+85.
+
+(/usr/local/texlive/2023/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
+))
 LaTeX Font Info:    Redeclaring math accent \widehat on input line 32.
 LaTeX Font Info:    Redeclaring math accent \widetilde on input line 32.
 LaTeX Font Info:    Trying to load font information for FML+futmi on input line
  76.
- (/usr/local/texlive/2023/texmf-dist/tex/latex/fourier/fmlfutmi.fd
+
+(/usr/local/texlive/2023/texmf-dist/tex/latex/fourier/fmlfutmi.fd
 File: fmlfutmi.fd 2004/10/30 Fontinst v1.926 font definitions for FML/futmi.
 )
 LaTeX Font Info:    Font shape `FMX/futm/m/n' will be
@@ -430,36 +456,69 @@ LaTeX Font Info:    Font shape `U/futm/m/n' will be
  [1
 
 {/usr/local/texlive/2023/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/loc
-al/texlive/2023/texmf-dist/fonts/enc/dvips/base/8r.enc}] [2]
+al/texlive/2023/texmf-dist/fonts/enc/dvips/base/8r.enc}]
+LaTeX Font Info:    Trying to load font information for TS1+futs on input line 
+125.
+
+(/usr/local/texlive/2023/texmf-dist/tex/latex/fourier/ts1futs.fd
+File: ts1futs.fd 2003/09/14 Fontinst v1.801 font definitions for TS1/futs.
+) [2]
+<./pics/4ai.png, id=15, 1316.92pt x 712.6625pt>
+File: ./pics/4ai.png Graphic file (type png)
+<use ./pics/4ai.png>
+Package pdftex.def Info: ./pics/4ai.png  used on input line 189.
+(pdftex.def)             Requested size: 299.5756pt x 162.11465pt.
+ [3]
+<./pics/4aii.png, id=22, 639.38875pt x 922.44624pt>
+File: ./pics/4aii.png Graphic file (type png)
+<use ./pics/4aii.png>
+Package pdftex.def Info: ./pics/4aii.png  used on input line 227.
+(pdftex.def)             Requested size: 299.5756pt x 432.19856pt.
+
+[4 <./pics/4ai.png>] [5 <./pics/4aii.png>] [6]
+Overfull \hbox (2.85634pt too wide) in paragraph at lines 302--303
+[]\T1/futs/m/n/10.95 Let $\FML/futmi/m/it/10.95 R\T1/futs/m/n/10.95 (\FML/futmi
+/m/it/10.95 k\T1/futs/m/n/10.95 ) \FMS/futm/m/n/10.95 Å \FML/futmi/m/it/10.95 t
+\T1/futs/m/n/10.95 (2[])$. By this def-i-ni-tion, $\FML/futmi/m/it/10.95 R\T1/f
+uts/m/n/10.95 ([] \FML/futmi/m/it/10.95 n\T1/futs/m/n/10.95 ) \FMS/futm/m/n/10.
+95 Å \FML/futmi/m/it/10.95 t\T1/futs/m/n/10.95 (2[]) \FMS/futm/m/n/10.95 Å \FML
+/futmi/m/it/10.95 t\T1/futs/m/n/10.95 (\FML/futmi/m/it/10.95 n\T1/futs/m/n/10.9
+5 )$. Sim-i-larly, $\FML/futmi/m/it/10.95 R\T1/futs/m/n/10.95 (\FML/futmi/m/it/
+10.95 k\T1/futs/m/n/10.95 ) \FMS/futm/m/n/10.95 Å \T1/futs/m/n/10.95 4\FML/futm
+i/m/it/10.95 R\T1/futs/m/n/10.95 ([]\FML/futmi/m/it/10.95 k\T1/futs/m/n/10.95 )
+ \FMS/futm/m/n/10.95 Ä
+ []
+
+[7] [8]
 LaTeX Font Info:    Font shape `FMX/futm/m/n' will be
-(Font)              scaled to size 8.27998pt on input line 201.
+(Font)              scaled to size 8.27998pt on input line 448.
 LaTeX Font Info:    Font shape `FMX/futm/m/n' will be
-(Font)              scaled to size 6.99199pt on input line 201.
+(Font)              scaled to size 6.99199pt on input line 448.
 LaTeX Font Info:    Font shape `U/futm/m/n' will be
-(Font)              scaled to size 8.27998pt on input line 201.
+(Font)              scaled to size 8.27998pt on input line 448.
 LaTeX Font Info:    Font shape `U/futm/m/n' will be
-(Font)              scaled to size 6.99199pt on input line 201.
- [3] [4] (./ps1.aux) ) 
+(Font)              scaled to size 6.99199pt on input line 448.
+ [9] [10] (./ps1.aux) ) 
 Here is how much of TeX's memory you used:
- 4257 strings out of 476025
- 60770 string characters out of 5790017
- 1867388 words of memory out of 5000000
- 24632 multiletter control sequences out of 15000+600000
- 578630 words of font info for 109 fonts, out of 8000000 for 9000
+ 4653 strings out of 476025
+ 67804 string characters out of 5790017
+ 1875388 words of memory out of 5000000
+ 24996 multiletter control sequences out of 15000+600000
+ 594728 words of font info for 129 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 56i,9n,62p,913b,717s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2023/texmf-dist/fonts/type1/public/fo
-urier/fourier-bb.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fou
-rier/fourier-ml.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/four
-ier/fourier-mlit.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fou
-rier/fourier-ms.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopi
-a/putb8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putbi
-8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putr8a.pfb>
-</usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putri8a.pfb>
-Output written on ps1.pdf (4 pages, 88346 bytes).
+ 57i,13n,62p,913b,822s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2023/texmf-dist/fonts/type1/public/f
+ourier/fourier-bb.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fo
+urier/fourier-ml.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fou
+rier/fourier-mlit.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fo
+urier/fourier-ms.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utop
+ia/putb8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putb
+i8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putr8a.pfb
+></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putri8a.pfb>
+Output written on ps1.pdf (10 pages, 743499 bytes).
 PDF statistics:
- 58 PDF objects out of 1000 (max. 8388607)
- 35 compressed objects within 1 object stream
+ 83 PDF objects out of 1000 (max. 8388607)
+ 50 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 11 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -1,6 +1,5 @@
-use std::time::{Duration, Instant};
-
 use nalgebra::{Matrix2, Matrix2x1};
+use std::time::{Duration, Instant};
 
 pub type FibSz = u64;
 
@@ -62,25 +61,51 @@ const ALGOS: [Testable; 3] = [
     },
 ];
 
-const TIME_LIMIT: Duration = Duration::from_secs(16);
-
-fn main() {
+/// For questions 2a and 2c
+fn race_test(time_limit: &Duration) {
     for algorithm in ALGOS {
         let mut fib_num: u64 = 1;
         let timer = Instant::now();
         loop {
             (algorithm.algo)(fib_num);
-            if TIME_LIMIT <= timer.elapsed() {
+            if time_limit <= &timer.elapsed() {
                 break;
             }
             fib_num += 1;
         }
         println!(
             "{} reached Fibonacci number {} in less than {:?}",
-            algorithm.name, fib_num, TIME_LIMIT
+            algorithm.name, fib_num, time_limit
         );
     }
 }
+
+const OVERFLOW: u64 = 2u64.pow(31);
+
+/// For question 2b
+fn find_overflow() {
+    let mut fib_num: u64 = 1;
+    loop {
+        let res = fib_mtx(fib_num);
+        if res >= OVERFLOW {
+            println!("Fibonacci number {fib_num} is {res} > {OVERFLOW}");
+            break;
+        }
+        fib_num += 1;
+    }
+}
+
+/// Satisfies the final part of 2a
+fn get_times() {
+    let fib_num = 32;
+    for algorithm in ALGOS {
+        let timer = Instant::now();
+        (algorithm.algo)(fib_num);
+        println!("{} in {:?}", algorithm.name, timer.elapsed());
+    }
+}
+
+fn main() {}
 
 /*
 
