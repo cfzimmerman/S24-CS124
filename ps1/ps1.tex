@@ -129,11 +129,30 @@ you are using, if you do not already know.
 
   Based on these benchmarks, the matrix method appears much faster. 
   
+  \medskip
   Edit: After seeing part $c$, I realize my test might not look very creative. If you'd like actual times, computing the $32$nd Fibonacci number takes the following times:
   \begin{itemize}
     \item Recursive: 15.812041ms
     \item Iterative: 167ns
     \item Matrix: 83ns
+  \end{itemize}
+
+  \medskip
+  Edit 2: Part $c$ also required writing my own matrix exponentiation (to accomodate the modding). My own multiplication doesn't use SIMD or any serious optimizations, so I was curious to see how different it was from the graphics library. Here are the new results (no idea why iterative went down so much, I didn't touch it): 
+  \begin{itemize}
+    \item Recursive: n = 47
+    \item Iterative: n = 202,663
+    \item Matrix (my implementation): n = 55,309,376
+    \item Matrix (nalgebra crate): n = 198,068,230
+  \end{itemize}
+
+  \medskip
+  And new times. My matrix implementation and iterative are the same here, but I'm the difference is at the nanosecond level, so asymptotic behavior is much more effectively approximated by the 16 second tests.
+  \begin{itemize}
+    \item Recursive: 15.025ms
+    \item Iterative: 125ns
+    \item Matrix (my implementation): n = 125ns
+    \item Matrix (nalgebra crate): n = 83ns
   \end{itemize}
 \end{quote}
 \item
