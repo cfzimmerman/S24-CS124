@@ -81,7 +81,30 @@ Given positive integers $A, B$ satisfying $A \ge B$, let $(A',B') = (B,A \bmod B
     \item (\textbf{5 points}) Prove that $A' + B' \le \frac{2}{3}(A + B)$. Conclude that starting from $(A,B)$, Euclid's algorithm terminates after at most $\log_{3/2}(A+B)$ steps.
       \begin{quote}
         \color{purple}
-        Proof goes here
+        I'll prove the claim by considering two exhaustive cases relating $A$ and $B$. Assume for simplicity that $A \geq B$ must always be true. If not, Euclid's algorithm will swap them and resume that invariant. 
+
+        \medskip
+        Consider when $A \geq 2B$. By the definition above, observe the following: 
+        \begin{align*}
+            && A' + B' && \text{Initial} && \\
+            && = B + A \mod B && \text{Substitute by definitions} && \\
+            && \leq B + B \mod B && \text{Because $A \mod B < B$} && \\
+            && = 2B && \text{Simplify} && \\
+        \end{align*} 
+
+        Similarly, because $A \geq 2B$ by the case assumption, we know $A + B \geq 2B + B = 3B$. Join these into an inequality and simplify:
+        \begin{align*}
+            && A' + B' \leq 2B \leq 3B \leq A + B && \text{Inequalities determined above} && \\
+            && A' + B' \leq 2B \leq \frac{2}{3} \cdot 3B \leq \frac{2}{3}(A + B) && \text{Scale right two terms} && \\
+            && A' + B' \leq 2B = 2B \leq \frac{2}{3}(A + B) && \text{Simplify} && \\
+            && A' + B' \leq \frac{2}{3}(A + B) && \text{Remove intermediate terms} && \\
+        \end{align*} 
+
+        Thus, when $A \geq 2B$, it holds that $A' + B' \le \frac{2}{3}(A + B)$. 
+
+        \medskip
+        Next, consider then $A < 2B$. Because $A$ is less than $2B$ from 
+
       \end{quote}
     \item (\textbf{3 points}) In lieu of $A+B$, consider a more general function $g(A,B) = A + \beta B$ for $\beta > 0$. Let $A = QB+R$, where $R$ is the remainder and $Q$ is the quotient when dividing $A$ by $B$. Give an exact expression for $L' = g(A',B')$ solely in terms of $B,R,\beta$, and give a lower bound $L$ for $g(A,B)$ solely in terms of $B, R, \beta$. Briefly justify your answer
     \item (\textbf{5 points}) Define a choice of $\beta$ for which the ratio $L'/L$ in the previous question is always the same regardless of $B,R$. Prove your answer. (Note: $\beta$ and this ratio will be irrational numbers)
@@ -120,7 +143,7 @@ you are using, if you do not already know.
   \end{algorithmic}
   \end{algorithm}
 
-  Basically, a race to see how high of $n$ could be reached in less than 16 seconds (the last run that went over was not counted). After three passes, these were my average results:
+  It's a race to see how high of $n$ can be reached in less than 16 seconds (the last run that went over was not counted). After three passes, these were my average results:
   \begin{itemize}
     \item Recursive: n = 47
     \item Iterative: n = 225,248
@@ -138,7 +161,7 @@ you are using, if you do not already know.
   \end{itemize}
 
   \medskip
-  Edit 2: Part $c$ also required writing my own matrix exponentiation (to accomodate the modding). My own multiplication doesn't use SIMD or any serious optimizations, so I was curious to see how different it was from the graphics library. Here are the new results (no idea why iterative went down so much, I didn't touch it): 
+  Edit 2: Part $c$ also required writing my own matrix exponentiation (to accomodate the modding). My own multiplication uses basic $n^3$ multiplication and doesn't use SIMD or any serious optimizations, so I was curious to see how different it was from the graphics library. Here are the new results (Edit 3: these were found before I added timeouts mentioned in part $c$): 
   \begin{itemize}
     \item Recursive: n = 47
     \item Iterative: n = 202,663
@@ -147,7 +170,7 @@ you are using, if you do not already know.
   \end{itemize}
 
   \medskip
-  And new times. My matrix implementation and iterative are the same here, but I'm the difference is at the nanosecond level, so asymptotic behavior is much more effectively approximated by the 16 second tests.
+  And new times. My matrix implementation and iterative are the same here, but the difference is at the nanosecond level, so asymptotic behavior is much more effectively approximated by the 16 second tests.
   \begin{itemize}
     \item Recursive: 15.025ms
     \item Iterative: 125ns
@@ -172,6 +195,16 @@ system overflows.) For each method, what is the largest value of $k$ such that y
 $k^\text{th}$ Fibonacci number (modulo 65536) in one minute of machine time? If that value of $k$ would be too big to handle (e.g. if you'd get integer overflow on $k$ itself) but you can still calculate $F_{k}$ quickly, you may report the largest value $k_{max}$ of $k$ you can handle and the amount of time the calculation of $F_{\rm k_{max}}$ takes. 
 \begin{quote}
   \color{purple}
+  I changed my code substantially this problem. Now, the algorithms perform modulo arithmetic on intermediate Fibonacci numbers, and they carry timers so that long-running functions can interrupt themselves. Polling the timers seems to meaningfully slow down each recursive frame and iterative pass. I also wrote my own matrix exponentiation (instead of the graphics library from part $a$), and I added a function that binary-searches for the input to an algorithm that halts than 60 seconds with correct output. 
+
+  \medskip
+  My matrix exponentiation algorithm calculates the (mod $2^16$) Fibonacci number for Rust's $u64::MAX = 18446744073709551615$ value in much less than a second. This surprised me a lot. I wrote a test to ensure recursive, iterative, and matrix all produce the same values up to the 20th Fibonacci number and a similar test for just matrix and iterative up to the $2^12$th Fibonacci number. I really don't think my matrix implementation is incorrect. Because exponentiation is essentially $\lg n$ and $\lg 2^{64} = 64$, my conclusion is that computing the maximum non-overflow Fibonacci number on my computer in microseconds when a low Fibonacci number takes nanoseconds might make sense.
+
+  \begin{itemize}
+    \item Recursive: Computed $k = 45$ in less than one minute. (This is slower than the 16 seconds test from $a$, but checking the timer at every frame had a big impact)
+    \item Iterative: Computed $k = 2,464,538,623$ in less than one minute.
+    \item Matrix: Computed $k = 18446744073709551615$ (maximum unsigned 64-bit integer) in $1.208$ microseconds.
+  \end{itemize}
 
 \end{quote}
 \end{enumerate}

@@ -1,34 +1,51 @@
+use crate::{benchmarks::Timer, matrix::ModMtx2};
 use nalgebra::{Matrix2, Matrix2x1};
-
-use crate::matrix::ModMtx2;
 
 pub type FibSz = u64;
 
 /// Computes the nth Fibonacci number using a recursive algorithm
-pub fn fib_rec(num: FibSz) -> FibSz {
+pub fn fib_rec(num: FibSz, modc: u64, timer: &mut Option<Timer>) -> Option<FibSz> {
+    if let Some(tm) = timer {
+        if tm.expired() {
+            return None;
+        }
+    }
     match num {
-        0 => 0,
-        1 => 1,
-        _ => fib_rec(num - 1) + fib_rec(num - 2),
+        0 => return Some(0),
+        1 => return Some(1),
+        _ => (),
+    };
+    match (fib_rec(num - 1, modc, timer), fib_rec(num - 2, modc, timer)) {
+        (Some(o), Some(t)) => Some((o + t) % modc),
+        _ => None,
     }
 }
 
 /// Computes the nth Fibonacci number using an iterative algorithm
-pub fn fib_iter(num: FibSz) -> FibSz {
+pub fn fib_iter(num: FibSz, modc: u64, timer: &mut Option<Timer>) -> Option<FibSz> {
     let mut two_back: FibSz = 0;
     let mut one_back: FibSz = 1;
     match num {
-        0 => return two_back,
-        1 => return one_back,
+        0 => return Some(two_back),
+        1 => return Some(one_back),
         _ => (),
     };
 
     for _ in 2..=num {
+        if let Some(tm) = timer {
+            if tm.expired() {
+                return None;
+            }
+        }
+        if u64::MAX - one_back < two_back {
+            println!("Exited fib_iter early to prevent overflow: one_back: {one_back}, two_back: {two_back}");
+            return Some(one_back);
+        }
         let next = one_back + two_back;
-        two_back = one_back;
-        one_back = next;
+        two_back = one_back % modc;
+        one_back = next % modc;
     }
-    one_back
+    Some(one_back)
 }
 
 /// Computes the nth Fibonacci number using a matrix exponentiation algorithm
@@ -43,38 +60,37 @@ pub fn fib_mtx(num: FibSz) -> FibSz {
 }
 
 /// Computes the nth Fibonacci number ussing matrix exponentation mod a given constant
-pub fn fib_mtx_mod(num: FibSz, modc: usize) -> FibSz {
-    let pow: usize = (num - 1)
-        .try_into()
-        .expect("Failed to cast FibSz to usize.");
+pub fn fib_mtx_mod(num: FibSz, modc: u64, timer: &mut Option<Timer>) -> Option<FibSz> {
+    let pow: u64 = (num - 1).try_into().expect("Failed to cast FibSz to u64.");
     let mtx = ModMtx2::new([[1, 1], [1, 0]], modc);
-    let res = mtx.mod_pow(pow);
-    res.get()[0][0]
-}
-
-pub fn fib_mtx_mod_2_16(num: FibSz) -> FibSz {
-    fib_mtx_mod(num, 2usize.pow(16))
+    mtx.mod_pow(pow, timer).map(|res| res.get()[0][0])
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::fib::{fib_iter, fib_mtx, fib_mtx_mod, fib_mtx_mod_2_16, fib_rec, FibSz};
-
-    const TEST_UPTO: FibSz = 20;
+    use crate::fib::{fib_iter, fib_mtx_mod, fib_rec};
 
     #[test]
     fn compare_methods() {
-        let modc = 2usize.pow(32);
-        for fib in 1..=TEST_UPTO {
-            let rec = fib_rec(fib);
-            let iter = fib_iter(fib);
-            let mtx = fib_mtx(fib);
-            let mod_mtx = fib_mtx_mod(fib, modc);
-            let mod_mtx_16 = fib_mtx_mod_2_16(fib);
+        let test_upto = 20;
+        let modc = u64::MAX;
+        for fib in 1..=test_upto {
+            let rec = fib_rec(fib, modc, &mut None);
+            let iter = fib_iter(fib, modc, &mut None);
+            let mod_mtx = fib_mtx_mod(fib, modc, &mut None);
             assert_eq!(rec, iter);
-            assert_eq!(rec, mtx);
             assert_eq!(rec, mod_mtx);
-            assert_eq!(rec, mod_mtx_16);
+        }
+    }
+
+    #[test]
+    fn compare_faster_methods() {
+        let test_upto = 2u64.pow(12);
+        let modc = 2u64.pow(16);
+        for fib in 1..=test_upto {
+            let iter = fib_iter(fib, modc, &mut None);
+            let mod_mtx = fib_mtx_mod(fib, modc, &mut None);
+            assert_eq!(iter, mod_mtx);
         }
     }
 }

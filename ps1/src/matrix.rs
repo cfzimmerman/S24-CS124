@@ -1,16 +1,16 @@
-use crate::fib::FibSz;
+use crate::{benchmarks::Timer, fib::FibSz};
 
 pub type RawMtx = [[FibSz; 2]; 2];
 
 #[derive(Debug, PartialEq)]
 pub struct ModMtx2 {
     mtx: RawMtx,
-    modc: usize,
+    modc: u64,
 }
 
 impl ModMtx2 {
     /// Constructs a new 2 by 2 ModMtx. Each inner array in RawMtx is a row.
-    pub fn new(mut mtx: RawMtx, modc: usize) -> Self {
+    pub fn new(mut mtx: RawMtx, modc: u64) -> Self {
         for row in 0..2 {
             for col in 0..2 {
                 mtx[row][col] = mtx[row][col] % modc as FibSz;
@@ -24,7 +24,7 @@ impl ModMtx2 {
     }
 
     /// Constructs the identity matrix
-    pub fn identity(modc: usize) -> ModMtx2 {
+    pub fn identity(modc: u64) -> ModMtx2 {
         ModMtx2 {
             mtx: [[1, 0], [0, 1]],
             modc,
@@ -51,14 +51,21 @@ impl ModMtx2 {
         res
     }
 
-    pub fn mod_pow(mut self, pow: usize) -> Self {
+    /// Computes matrix power mod modc. If a timer is provided, calculation
+    /// will quit and return None if the time limit is exceeded.
+    pub fn mod_pow(mut self, pow: u64, timer: &mut Option<Timer>) -> Option<Self> {
         let mut pow = pow;
         let mut odd_facs = Self::identity(self.modc);
         if pow == 0 {
-            return odd_facs;
+            return Some(odd_facs);
         }
 
         while pow > 1 {
+            if let Some(tm) = timer {
+                if tm.expired() {
+                    return None;
+                }
+            }
             if pow % 2 == 1 {
                 odd_facs = self.mod_mult(&odd_facs);
                 pow -= 1;
@@ -66,7 +73,7 @@ impl ModMtx2 {
             self.mtx = self.mod_mult(&self).mtx;
             pow /= 2;
         }
-        self.mod_mult(&odd_facs)
+        Some(self.mod_mult(&odd_facs))
     }
 }
 
@@ -101,7 +108,7 @@ mod tests {
         let pow = 5;
         let base = ModMtx2::new([[2, 1], [2, 3]], mod_c);
         let expected = ModMtx2::new([[342, 341], [682, 683]], mod_c);
-        assert_eq!(base.mod_pow(pow), expected);
+        assert_eq!(base.mod_pow(pow, &mut None), Some(expected));
     }
 
     #[test]
@@ -110,6 +117,6 @@ mod tests {
         let pow = 10;
         let base = ModMtx2::new([[1, 1], [1, 0]], mod_c);
         let expected = ModMtx2::new([[89, 55], [55, 34]], mod_c);
-        assert_eq!(base.mod_pow(pow), expected);
+        assert_eq!(base.mod_pow(pow, &mut None), Some(expected));
     }
 }
