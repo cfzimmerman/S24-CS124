@@ -1,8 +1,4 @@
-use ps1::{
-    benchmarks::{get_time, search_all_times},
-    fib::fib_mtx_mod,
-};
-use std::time::Duration;
+use ps1::{benchmarks::get_time, fib::fib_mtx_mod};
 
 fn main() {
     let mod_c = 2u64.pow(16);
