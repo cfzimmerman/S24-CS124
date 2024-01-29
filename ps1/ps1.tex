@@ -88,7 +88,7 @@ Given positive integers $A, B$ satisfying $A \ge B$, let $(A',B') = (B,A \bmod B
         \begin{align*}
             && A' + B' && \text{Initial} && \\
             && = B + A \mod B && \text{Substitute by definitions} && \\
-            && \leq B + B \mod B && \text{Because $A \mod B < B$} && \\
+            && \leq B + B && \text{Because $A \mod B < B$} && \\
             && = 2B && \text{Simplify} && \\
         \end{align*} 
 
@@ -123,18 +123,18 @@ Given positive integers $A, B$ satisfying $A \ge B$, let $(A',B') = (B,A \bmod B
         Next, consider why Euclid's algorithm starting from $(A, B)$ must conclude after at most $\log_{3/2}(A+B)$ steps. 
 
         \medskip
-        Having concluded that recursive inputs to Euclid's algorithm shrink by at least $\frac{2}{3}$ per iteration, we expect the at step $i$ the sum $A_i + B_i \leq (\frac{2}{3})^i(A + B)$ where $A_i + B_i > 1$. Because $A_k + B_k \leq 1$ indicates the base case, solve for the maximum $i$ for which that point is reached:
+        Having concluded that recursive inputs to Euclid's algorithm shrink by at least $\frac{2}{3}$ per iteration, we expect the at step $i$ the sum $A_i + B_i \leq (\frac{2}{3})^i(A + B)$ where $A_i + B_i \geq 1$. Because $A_k + B_k \leq 1$ indicates the base case, solve for the maximum $i$ for which that point is reached:
 
         \begin{align*}
             && 1 = (\frac{2}{3})^i(A + B) && \text{Initial} && \\
             && \log_{\frac{3}{2}}1 = \log_{\frac{3}{2}}((\frac{2}{3})^i(A + B)) && \text{Apply log} && \\
             && 0 = \log_{\frac{3}{2}}(\frac{2}{3})^i + \log_{\frac{3}{2}}(A + B)) && \text{Log rule for multiplication} && \\
-            && 0 = i\log_{\frac{3}{2}}(\frac{2}{3}) + \log_{\frac{3}{2}}(A + B)) && \text{Log rule for exponents} && \\
-            && 0 = -i + \log_{\frac{3}{2}}(A + B)) && \text{Simplify} && \\
-            && i = \log_{\frac{3}{2}}(A + B)) && \text{Add $i$} && \\
+            && 0 = i\log_{\frac{3}{2}}(\frac{2}{3}) + \log_{\frac{3}{2}}(A + B) && \text{Log rule for exponents} && \\
+            && 0 = -i + \log_{\frac{3}{2}}(A + B) && \text{Simplify} && \\
+            && i = \log_{\frac{3}{2}}(A + B) && \text{Add $i$} && \\
         \end{align*} 
 
-        Thus, the value $i$ representing the maximum bound for the number of iterations of Euclid's algorithm on inputs $A$ and $B$ is $\log_{\frac{3}{2}}(A + B))$. 
+        Thus, the value $i$ representing the maximum bound for the number of iterations of Euclid's algorithm on inputs $A$ and $B$ is $\log_{\frac{3}{2}}(A + B)$. 
       \end{quote}
 
     \item (\textbf{3 points}) In lieu of $A+B$, consider a more general function $g(A,B) = A + \beta B$ for $\beta > 0$. Let $A = QB+R$, where $R$ is the remainder and $Q$ is the quotient when dividing $A$ by $B$. Give an exact expression for $L' = g(A',B')$ solely in terms of $B,R,\beta$, and give a lower bound $L$ for $g(A,B)$ solely in terms of $B, R, \beta$. Briefly justify your answer
@@ -188,11 +188,11 @@ Given positive integers $A, B$ satisfying $A \ge B$, let $(A',B') = (B,A \bmod B
           && \frac{B + (\frac{-1 + \sqrt 5}{2}) R}{B(1 + (\frac{-1 + \sqrt 5}{2})) + R} = \frac{-1 + \sqrt 5}{2} && \text{Definition of $\beta$} && \\
           && 2(B + \frac{-1}{2}R + \frac{\sqrt 5}{2}R) = (-1 + \sqrt 5)(B - \frac{1}{2}B + \frac{\sqrt 5}{2}B + R) && \text{Cross multiply} && \\
           && 2B - R + \sqrt{5}R = -B + \frac{1}{2}B - \frac{\sqrt 5}{2}B - R + \sqrt{5}B - \frac{\sqrt 5}{2}B + \frac{5}{2}B + \sqrt{5}R && \text{Distribute} && \\
-          && 2B - R + \sqrt{5}R = -B + 3B - sqrt{5}B + \sqrt{5}B - R + \sqrt{5}R && \text{Simplify} && \\
+          && 2B - R + \sqrt{5}R = -B + 3B - \sqrt{5}B + \sqrt{5}B - R + \sqrt{5}R && \text{Simplify} && \\
           && 2B - R + \sqrt{5}R = 2B - R + \sqrt{5}R && \text{Simplify} && \\
       \end{align*} 
 
-      Because the equality above holds, it must be true that $\frac{L'}{L} = \beta$ for any values of $b$ and $R$. 
+      Because the equality above always holds, it must be true that $\frac{L'}{L} = \beta$ for any values of $B$ and $R$. 
       \end{quote}
     \item (\textbf{5 points}) Use this choice of $\beta$ to prove an improved upper bound on the number of steps of Euclid's algorithm starting from $(A,B)$.
       \begin{quote}
@@ -277,7 +277,7 @@ you are using, if you do not already know.
   \begin{itemize}
     \item Recursive: n = 47
     \item Iterative: n = 202,663
-    \item Matrix (my implementation): n = 55,309,376
+    \item Matrix (mine): n = 55,309,376
     \item Matrix (nalgebra crate): n = 198,068,230
   \end{itemize}
 
@@ -286,8 +286,8 @@ you are using, if you do not already know.
   \begin{itemize}
     \item Recursive: 15.025ms
     \item Iterative: 125ns
-    \item Matrix (my implementation): n = 125ns
-    \item Matrix (nalgebra crate): n = 83ns
+    \item Matrix (mine): 125ns
+    \item Matrix (nalgebra crate): 83ns
   \end{itemize}
 \end{quote}
 \item
@@ -517,7 +517,7 @@ Give an example of a function $f_6: \mathbb{N} \to \mathbb{R}^+$ for which \emph
             \item $T(n) = \Theta((\lg n)^2)$
           \end{itemize}
 
-          Thus, by the Master Theorem and substitutions above, assert that the upper bound on $T(n)$ indicated is $O((\lg n)^2)$. 
+          Thus, by the Master Theorem and substitutions above, assert that the upper bound on $T(n)$ is $O((\lg n)^2)$. 
 
           \medskip
           \textbf{Lower bound}:
@@ -640,7 +640,7 @@ Your task is to prove that TwistedBubbleSort also correctly sorts every array. (
         \textit{Inductive hypothesis}: At index $0 \leq i \leq n - 1$, the subarray $A[0..=i]$ is sorted from least to greatest.
 
         \medskip 
-        \textit{Inductive step}: At index $i + 1$, consider the inner loop. By the proof above (question 5b), by the end of the $j$-loop, the greatest element in the array is at index $i + 1$. Because $A[0..=i]$ is already in sorted order (inductive hypothesis) and $A[i + 1]$ must be greater than all in $A[0..=i]$,  it must be true that the expanded subarray $A[0..=i + 1]$ is also now also in sorted order.
+        \textit{Inductive step}: At index $i + 1$, consider the inner loop. By the proof above (question 5b), by the end of the $j$-loop, the greatest element in the array is at index $i + 1$. Because $A[0..=i]$ is already in sorted order (inductive hypothesis) and $A[i + 1]$ must be greater than all in $A[0..=i]$,  it must be true that the expanded subarray $A[0..=i + 1]$ is also now also in sorted order. This proves the inductive step.
 
         \medskip
         By induction, it must then be true that after the $i$th iteration, indices $0$ to $i$ are in sorted order.
