@@ -81,7 +81,7 @@ Given positive integers $A, B$ satisfying $A \ge B$, let $(A',B') = (B,A \bmod B
     \item (\textbf{5 points}) Prove that $A' + B' \le \frac{2}{3}(A + B)$. Conclude that starting from $(A,B)$, Euclid's algorithm terminates after at most $\log_{3/2}(A+B)$ steps.
       \begin{quote}
         \color{purple}
-        I'll prove the claim by considering two exhaustive cases relating $A$ and $B$. Assume for simplicity that $A \geq B$ must always be true. If not, Euclid's algorithm will swap them and resume that invariant. 
+        I'll prove the claim by considering two exhaustive cases relating $A$ and $B$. Assume for simplicity that $A \geq B$. If not, Euclid's algorithm will swap them and resume that invariant. 
 
         \medskip
         Consider when $A \geq 2B$. By the definition above, observe the following: 
@@ -103,13 +103,125 @@ Given positive integers $A, B$ satisfying $A \ge B$, let $(A',B') = (B,A \bmod B
         Thus, when $A \geq 2B$, it holds that $A' + B' \le \frac{2}{3}(A + B)$. 
 
         \medskip
-        Next, consider then $A < 2B$. Because $A$ is less than $2B$ from 
+        Next, consider then $A < 2B$. Because $A$ is less than $2B$ from the case assertion and $A \geq B$ from the simpifying assumption, it must hold that $A \mod B = A - B$. Also, because $A < 2B$, it's also true that $\frac{1}{2}A < B$ and $\frac{1}{3}A < \frac{2}{3}B$. Apply these observations: 
+        \begin{align*}
+            && A' + B' && \text{Initial} && \\
+            && = B + A \mod B && \text{Substitute by definitions} && \\
+            && = B + A - B && \text{Asserted above} && \\
+            && = A && \text{Simplify} && \\
+            && = \frac{2}{3}A + \frac{1}{3}A && \text{Break apart $A$} && \\
+            && < \frac{2}{3}A + \frac{2}{3}B && \text{Asserted above} && \\
+            && = \frac{2}{3}(A + B) && \text{Factor} && \\
+        \end{align*} 
 
+        Thus, when $A < 2B$, it also holds that $A' + B' \le \frac{2}{3}(A + B)$. 
+
+        \medskip
+        These cases together prove that $A' + B' \le \frac{2}{3}(A + B)$. 
+
+        \medskip
+        Next, consider why Euclid's algorithm starting from $(A, B)$ must conclude after at most $\log_{3/2}(A+B)$ steps. 
+
+        \medskip
+        Having concluded that recursive inputs to Euclid's algorithm shrink by at least $\frac{2}{3}$ per iteration, we expect the at step $i$ the sum $A_i + B_i \leq (\frac{2}{3})^i(A + B)$ where $A_i + B_i > 1$. Because $A_k + B_k \leq 1$ indicates the base case, solve for the maximum $i$ for which that point is reached:
+
+        \begin{align*}
+            && 1 = (\frac{2}{3})^i(A + B) && \text{Initial} && \\
+            && \log_{\frac{3}{2}}1 = \log_{\frac{3}{2}}((\frac{2}{3})^i(A + B)) && \text{Apply log} && \\
+            && 0 = \log_{\frac{3}{2}}(\frac{2}{3})^i + \log_{\frac{3}{2}}(A + B)) && \text{Log rule for multiplication} && \\
+            && 0 = i\log_{\frac{3}{2}}(\frac{2}{3}) + \log_{\frac{3}{2}}(A + B)) && \text{Log rule for exponents} && \\
+            && 0 = -i + \log_{\frac{3}{2}}(A + B)) && \text{Simplify} && \\
+            && i = \log_{\frac{3}{2}}(A + B)) && \text{Add $i$} && \\
+        \end{align*} 
+
+        Thus, the value $i$ representing the maximum bound for the number of iterations of Euclid's algorithm on inputs $A$ and $B$ is $\log_{\frac{3}{2}}(A + B))$. 
       \end{quote}
+
     \item (\textbf{3 points}) In lieu of $A+B$, consider a more general function $g(A,B) = A + \beta B$ for $\beta > 0$. Let $A = QB+R$, where $R$ is the remainder and $Q$ is the quotient when dividing $A$ by $B$. Give an exact expression for $L' = g(A',B')$ solely in terms of $B,R,\beta$, and give a lower bound $L$ for $g(A,B)$ solely in terms of $B, R, \beta$. Briefly justify your answer
+      \begin{quote}
+        \color{purple}
+        Derive $L'$:
+        \begin{align*}
+            && L' = g(A' + B') && \text{Initial} && \\
+            && = A' + \beta B' && \text{Definition of $g$} && \\
+            && = B + \beta (A \mod B) && \text{From transition relation} && \\
+            && = B + \beta ((QB + R) \mod B) && \text{Definition above} && \\
+            && = B + \beta R && \text{Definition of remainder} && \\
+        \end{align*} 
+        Thus, $L' = B + \beta R$.
+
+        \medskip
+        Derive L. Before doing so, notice that because $A \geq B$ and $A + B \geq 1$, a minimum bound for $Q$ can always be defined as $Q \geq 1$.
+        \begin{align*}
+            && L = g(A + B) && \text{Initial} && \\
+            && = A + \beta B && \text{Definition of $g$} && \\
+            && = QB + R + \beta B && \text{Definition above} && \\
+            && \geq B + R + \beta B && \text{Asserted above} && \\
+            && = B(1 + \beta) + R && \text{Distribute} && \\
+        \end{align*} 
+        Thus, $L = B(1 + \beta) + R$.
+      \end{quote}
+
     \item (\textbf{5 points}) Define a choice of $\beta$ for which the ratio $L'/L$ in the previous question is always the same regardless of $B,R$. Prove your answer. (Note: $\beta$ and this ratio will be irrational numbers)
+      \begin{quote}
+        \color{purple}
+      Consider the ratio:
+      $$\frac{L'}{L} = \frac{B + \beta R}{B(1 + \beta) + R}$$
+      The goal is to express this ratio in terms of some constant $c$. That yields this equation: $B + \beta R = c(B + B \beta + R)$. It happens that $\beta$ itself is a suitable candidate for $c$. Simplify this equation where $c = \beta$. The derivation below assumes that $B$ is nonzero. 
+      \begin{align*}
+          && B + \beta R = c(B + \beta B + R) && \text{Initial} && \\
+          && B + \beta R = \beta B + \beta^2 B + \beta R && \text{Substitue $\beta = c$} && \\
+          && B = \beta B + \beta^2 B && \text{Subtract $\beta R$} && \\
+          && 0 = B \beta^2 + B \beta - B && \text{Rearrange into polynomial} && \\
+          && 0 = \beta^2 + \beta - 1 && \text{Divide by $B$} && \\
+          && 0 = \frac{-1 \pm \sqrt{1 - 4(1)(-1)}}{2} && \text{Quadratic formula} && \\
+          && 0 = \frac{-1 \pm \sqrt{5}}{2} && \text{Simplify} && \\
+      \end{align*} 
+
+      Because an algorithm's lower bound is logically never negative, choose the positive variant for $\beta = \frac{-1 + \sqrt 5}{2}$.
+
+      \medskip
+      Prove that this assignment of $\beta$ satisfies the claim by demonstrating that $\frac{L'}{L} = \beta$ for any values of $B$ and $R$: 
+      \begin{align*}
+          && \frac{L'}{L} = \beta && \text{Initial} && \\
+          && \frac{B + \beta R}{B(1 + \beta) + R} = \beta && \text{Defined above} && \\
+          && \frac{B + (\frac{-1 + \sqrt 5}{2}) R}{B(1 + (\frac{-1 + \sqrt 5}{2})) + R} = \frac{-1 + \sqrt 5}{2} && \text{Definition of $\beta$} && \\
+          && 2(B + \frac{-1}{2}R + \frac{\sqrt 5}{2}R) = (-1 + \sqrt 5)(B - \frac{1}{2}B + \frac{\sqrt 5}{2}B + R) && \text{Cross multiply} && \\
+          && 2B - R + \sqrt{5}R = -B + \frac{1}{2}B - \frac{\sqrt 5}{2}B - R + \sqrt{5}B - \frac{\sqrt 5}{2}B + \frac{5}{2}B + \sqrt{5}R && \text{Distribute} && \\
+          && 2B - R + \sqrt{5}R = -B + 3B - sqrt{5}B + \sqrt{5}B - R + \sqrt{5}R && \text{Simplify} && \\
+          && 2B - R + \sqrt{5}R = 2B - R + \sqrt{5}R && \text{Simplify} && \\
+      \end{align*} 
+
+      Because the equality above holds, it must be true that $\frac{L'}{L} = \beta$ for any values of $b$ and $R$. 
+      \end{quote}
     \item (\textbf{5 points}) Use this choice of $\beta$ to prove an improved upper bound on the number of steps of Euclid's algorithm starting from $(A,B)$.
+      \begin{quote}
+        \color{purple}
+        Given that $\frac{L'}{L}$ gives the ratio of inputs from one iteration to the next, we wish to know how that ratio progresses. Consider the following: $L' = \beta L$. Similarly, $L'' = \beta \beta L$. Etc. Thus, $L^i = \beta^i L = \beta^i(B + \beta B + R)$. Solve this for $i$ where $L^i = 1$, the minimum input size:
+      \begin{align*}
+          && 1 = \beta^i(B + \beta B + R) && \text{Initial} && \\
+          && \frac{1}{B + \beta B + R} = \beta^i && \text{Divide} && \\
+          && \log_{\beta}\frac{1}{B + \beta B + R} = log_{\beta} \beta^i && \text{Apply log} && \\
+          && \log_{\frac{-1 + \sqrt{5}}{2}}\frac{1}{B + \frac{-1 + \sqrt{5}}{2} B + A \mod B} = i && \text{Expand beta, R} && \\
+      \end{align*} 
+
+      Thus, an improved upper bound on the number of steps in Euclid's Algorithm starting from $(A, B)$ is $\log_{\frac{-1 + \sqrt{5}}{2}}\frac{1}{B + \frac{-1 + \sqrt{5}}{2} B + A \mod B}$. 
+      \end{quote}
     \item (\textbf{2 points}) Construct an increasing sequence of inputs $(A,B)$ for which the bound in the previous question is asymptotically tight. Informally justify why the sequence you constructed is tight in 1-2 sentences.
+      \begin{quote}
+        \color{purple}
+        Consider this sequence:
+        \begin{itemize}
+          \item A = 21, B = 13
+          \item A = 13, B = 8 
+          \item A = 8, B = 5 
+          \item A = 5, B = 3 
+          \item A = 3, B = 2 
+          \item A = 2, B = 1 
+          \item A = 1, B = 0 
+        \end{itemize}
+        In increasing order, that's 0, 1, 2, 3, 5, 8, 13, 21, etc. The bound stated above is essentially a logarithmic inversion of the Fibonacci numbers. That relationship is revealed by the value of $\beta$ and it's closeness to the Golden Number. Further, the Fibonacci numbers collapse almost perfectly within this algorithm, making them a tight bound to the algorithm.
+      \end{quote}
 \end{enumerate}
 (Note; Part (e) above may be attempted independently before attempting other parts and the answer may give a hint to solving Parts (b)-(d).)
 % to \emph{polynomials}. Let $\mathbb{Q}[x]$ denote the set of polynomials in the variable $x$ whose coefficients are rational numbers (e.g. $\frac{3}{7}x^3 - 2x + \frac{5}{3} \in \mathbb{Q}[x]$).
@@ -161,7 +273,7 @@ you are using, if you do not already know.
   \end{itemize}
 
   \medskip
-  Edit 2: Part $c$ also required writing my own matrix exponentiation (to accomodate the modding). My own multiplication uses basic $n^3$ multiplication and doesn't use SIMD or any serious optimizations, so I was curious to see how different it was from the graphics library. Here are the new results (Edit 3: these were found before I added timeouts mentioned in part $c$): 
+  Edit 2: Part $c$ also required writing my own matrix exponentiation (to accomodate the modding). My own multiplication uses basic $n^3$ multiplication and doesn't use SIMD or any serious optimizations, so I was curious to see how different it was from the previously-used Linear Algebra library. Here are the new results (Edit 3: these were taken before I added timeouts mentioned in part $c$): 
   \begin{itemize}
     \item Recursive: n = 47
     \item Iterative: n = 202,663
@@ -195,10 +307,10 @@ system overflows.) For each method, what is the largest value of $k$ such that y
 $k^\text{th}$ Fibonacci number (modulo 65536) in one minute of machine time? If that value of $k$ would be too big to handle (e.g. if you'd get integer overflow on $k$ itself) but you can still calculate $F_{k}$ quickly, you may report the largest value $k_{max}$ of $k$ you can handle and the amount of time the calculation of $F_{\rm k_{max}}$ takes. 
 \begin{quote}
   \color{purple}
-  I changed my code substantially this problem. Now, the algorithms perform modulo arithmetic on intermediate Fibonacci numbers, and they carry timers so that long-running functions can interrupt themselves. Polling the timers seems to meaningfully slow down each recursive frame and iterative pass. I also wrote my own matrix exponentiation (instead of the graphics library from part $a$), and I added a function that binary-searches for the input to an algorithm that halts than 60 seconds with correct output. 
+  I changed my code substantially this problem. Now, the algorithms perform modulo arithmetic on intermediate Fibonacci numbers, and they carry timers so that long-running functions can interrupt themselves. Polling the timers seems to meaningfully slow down each recursive frame and iterative pass. I also wrote my own matrix exponentiation (instead of the graphics library from part $a$), and I added a function that binary-searches for the greatest input to an algorithm that halts within 60 seconds. 
 
   \medskip
-  My matrix exponentiation algorithm calculates the (mod $2^16$) Fibonacci number for Rust's $u64::MAX = 18446744073709551615$ value in much less than a second. This surprised me a lot. I wrote a test to ensure recursive, iterative, and matrix all produce the same values up to the 20th Fibonacci number and a similar test for just matrix and iterative up to the $2^12$th Fibonacci number. I really don't think my matrix implementation is incorrect. Because exponentiation is essentially $\lg n$ and $\lg 2^{64} = 64$, my conclusion is that computing the maximum non-overflow Fibonacci number on my computer in microseconds when a low Fibonacci number takes nanoseconds might make sense.
+  My matrix exponentiation algorithm calculates the (mod $2^{16}$) Fibonacci number for Rust's u64::MAX = $2^{64} - 1$ = 18,446,744,073,709,551,615 value in much less than a second. This surprised me a lot. I wrote a test to ensure recursive, iterative, and matrix all produce the same values up to the 20th Fibonacci number and a similar test for just matrix and iterative up to the $2^{12}$th Fibonacci number. I really don't think my matrix implementation is incorrect. Because exponentiation is essentially $\lg n$ and $\lg 2^{64} = 64$, my conclusion is that computing the maximum non-overflow Fibonacci number on my computer in microseconds when a low Fibonacci number takes nanoseconds might make sense.
 
   \begin{itemize}
     \item Recursive: Computed $k = 45$ in less than one minute. (This is slower than the 16 seconds test from $a$, but checking the timer at every frame had a big impact)
@@ -222,9 +334,50 @@ Make all true statements of the form $f_i \in o(f_j)$, $f_i \in O(f_j)$, $f_i \i
 \item $f_4 = n^{\log\log n}$
 \item $f_5 = (\log\log n)^n$
 \end{enumerate}
+\begin{quote}
+  \color{purple}
+  \begin{itemize}
+    \item $i$
+    \begin{itemize}
+      \item $f_i \in O(f_1), f_i \in \Omega(f_1)$ 
+      \item $f_1 \in \omega(f_2), f_1 \in \Omega(f_2)$ 
+      \item $f_1 \in \omega(f_3), f_1 \in \Omega(f_3)$ 
+      \item $f_1 \in O(f_4), f_1 \in \Omega(f_4)$ 
+      \item $f_1 \in o(f_5), f_1 \in O(f_5)$ 
+    \end{itemize}
+    \item $ii$
+    \begin{itemize}
+      \item $f_2 \in O(f_2), f_2 \in \Omega(f_2)$ 
+      \item $f_2 \in \omega(f_3), f_2 \in \Omega(f_3)$ 
+      \item $f_2 \in o(f_4), f_2 \in O(f_4)$ 
+      \item $f_2 \in o(f_5), f_2 \in O(f_5)$ 
+    \end{itemize}
+    \item $iii$
+    \begin{itemize}
+      \item $f_3 \in O(f_3), f_3 \in \Omega(f_3)$ 
+      \item $f_3 \in o(f_4), f_3 \in O(f_4)$ 
+      \item $f_3 \in o(f_5), f_3 \in O(f_5)$ 
+    \end{itemize}
+    \item $iv$
+    \begin{itemize}
+      \item $f_4 \in O(f_4), f_4 \in \Omega(f_4)$ 
+      \item $f_4 \in o(f_5), f_4 \in O(f_5)$ 
+    \end{itemize}
+    \item $v$ 
+    \begin{itemize}
+      \item $f_5 \in O(f_5), f_5 \in \Omega(f_5)$ 
+    \end{itemize}
+  \end{itemize}
+  
+\end{quote}
 \item
 {\bf (5 points)}
 Give an example of a function $f_6: \mathbb{N} \to \mathbb{R}^+$ for which \emph{none} of the four statements $f_i \in o(f_6)$, $f_i \in O(f_6)$, $f_i \in \omega(f_6)$, and $f_i \in \Omega(f_6)$ is true for any $i \in \{1,2,3,4,5\}$.
+\begin{quote}
+  \color{purple}
+  $f_6 = 2^{\frac{1}{\sin n}}$. My reasoning is that this function oscillates wildly between zero and infinity as it increases and thus doesn't have an asymptotically clear bound. That makes it impossible to compare using order notation.
+  
+\end{quote}
 \end{enumerate}
 
 \item \begin{enumerate}
