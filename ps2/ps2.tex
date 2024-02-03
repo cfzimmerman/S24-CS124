@@ -137,55 +137,61 @@ exists.  (You need not actually find it.)
 
 \begin{quote}
   \color{purple}
-  \textit{Note: I made heavy use of CLRS Ch. 22 and the Wikipedia entry for the Bellman-Ford algorithm when working on this question. Answers are my own, but I can only take credit for my adaptation of their algorithm}. 
+  \textit{Note: Assertions about the Bellman Ford algorithm and Kosaraju's algorithm come from lecture notes, CLRS Ch. 22, and the respective Wikipedia pages}.
 
   \medskip
-  This problem can be solved by modeling the inputs as a weighted directed graph and applying a variant of the Bellman-Ford algorithm. I chose Bellman-Ford over Djikstra's algorithm because I believe multiplying by numbers greater than one in this adaptation has the same effect as adding a negative number in a classic shortest paths representation. That said, consider this formalization of the problem:  
+  Let the problem be defined as above with inputs representing a directed graph as an adjacency list of currencies and their exchange rates. In this explanation, assume a currency is synonymous with a vertex and a weighted edge is parallel to $r_{i,j}$ in the question.
 
   \medskip
-  \textbf{Algorithm}:
-  \begin{itemize}
-    \item Inputs: A graph consisting of vertices and edges. Each vertex must be capable of carrying a numeric field \texttt{vertex.val}, and each edge must carry an extra field \texttt{edge.rate} containing the exchange rate of converting from one vertex to another. Edge rates are assumed to be nonnegative, and it's assumed that no edges are self-loops.
-    \item Output: True if a risk-free exchange path exists starting at \texttt{start}, false if not. Such a risk-free path exists if a sequence of vertices $c_0, \dots, c_{n - 1}, c_0$ exists such that the edge rates between them multiplied together exceed 1. 
-  \end{itemize}
+  By Lemma 1 below, a cycle of vertices $C = c_a, c_b, \dots, c_k, c_a$ such that $r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a} > 1$ is equivalent to finding a negative weight cycle in a graph of the same vertices where $-\lg r_{a, b} - \lg r_{b, b + 1} - \dots - \lg r_{k, a} < 0$. The Bellman Ford algorithm detects negative-weight cycles. By Lemma 2 below, such a cycle will be in a strongly connected component (SCC). By using Kosaraju's algorithm to find every SCC and returning true if Bellman Ford detects a negative weight cycle, this problem can be solved in time $O(VE)$. The pseudocode below implements this algorithm:
 
-  Consider this pseudocode, which is explained below: \\ 
   \begin{verbatim}
-  type Vertex = (id, val);
-  type Edge = (vertex from, vertex to, exchange rate);
+  fn risk_free_forex(adj: Graph as adjacency list) -> boolean:
+      list of SCCs = Kosaraju's Algorithm on adj;
 
-  fn find_risk_free(
-      vertices: Vertex list, 
-      edges: Edge list, 
-      start: reference to Vertex 
-  ) -> bool:
-      for vertex in vertices:
-          vertex.val = 0;
-      start.val = 1;
-
-      for vertices.len() times:
+      for SCC as (list of vertices, list of edges) in SCCs:
           for edge in edges:
-              if edge.to.val < edge.from.val * edge.rate:
-                  edge.to.val = edge.from.val * edge.rate;
+              edge.weight = -1 * lg(edge.weight);
+          if Bellman Ford(vertices, edges, edges[0]) returns false: 
+              return true;
 
-      let inf_cycle = false;
-      for edge in edges:
-          if edge.to.val < edge.from.val * edge.rate:
-              inf_cycle = true;
-              break;
-
-      return true if 
-          start.val > 1 
-          or 
-          pos_cycle is true and start.val is not 1
+      return false; 
   \end{verbatim}
-  The algorithm begins by setting every vertex's value to 0 except \texttt{start}, which is 1. In this algorithm, all nonzero \texttt{vertex.val} other than start hold the optimal product of all predecessors.  
 
-  \medskip
-  For a number of times equaling the number of vertices, consider every edge. If the conversion ratio of a vertex can be improved by updating its path membership to a different neighbor, the vertex is shifted. In this way, vertices continually shift towards their most optimal path among those currently discovered. This is parallel to the CLRS concept of "relaxation". After the main loop, a second loop is run to detect any cycles in the graph where every iteration of the cycle increases the values of its constituent vertices. If such a cycle is in the graph and part of a larger cycle with \texttt{start}, always return true. Otherwise, return true only if a path was found that returned to \texttt{start} and increased its value from 1. 
+\medskip 
+\textbf{Correctness}:\\ 
+\textit{Lemma 1}: If a cycle $c_a, c_b, \dots, c_k, c_a$ exists such that $r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a} > 1$, then $-\lg r_{a, b} - \lg r_{b, b + 1} - \dots - \lg r_{k, a} < 0$. Proof by this series of algebraic manipulations: 
+\begin{align*}
+    && r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a} > 1 && \text{Initial} && \\
+    && \lg (r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a}) > \lg 1 && \text{Apply log} && \\
+    && \lg r_{a, b} + \lg r_{b, b + 1} + \dots + \lg r_{k, a} > 0 && \text{Log multiplication rule} && \\
+    && -\lg r_{a, b} - \lg r_{b, b + 1} - \dots - \lg r_{k, a} < 0 && \text{Divide by $-1$} && \\
+\end{align*} 
 
-  \medskip
-  \textbf{Correctness}: Here 
+\medskip
+\textit{Lemma 2}: If such a cycle from Lemma 1 exists in the graph, then it's an SCC. Let $C = c_a, c_b, \dots, c_k, c_a$ be the vertices of such a cycle. Let $c_m$ be any of these vertices in $C$. By definition of cycle, $c_m$ is reachable from $c_a$. By definition of cycle, $c_a$ is reachable from $c_m$. Because $c_m$ can be any vertex in $C$, every vertex in the cycle is reachable from every other vertex in the cycle, making it an SCC. 
+
+\medskip
+\textit{Proof 1}: If there's a risk free cycle $C$ as defined above, the algorithm returns true. 
+
+\medskip
+By Lemma 2, considering every SCC individually cannot change the existence of a risk-free cycle in the graph. Similarly, it makes the choice of \texttt{vertices[0]} as Bellman Ford \texttt{start} arbitrary. By Lemma 1, if such a cycle exists in any SCC, it will manifest after conversion as a negative weight loop. The Bellman Ford algorithm always returns false if a negative weight cycle exists, so it will always return false if a negative weight cycle exists in the SCC it's given. Because every SCC is considered, the algorithm will always return true if a negative weight cycle exists anywhere in the graph, thus returning true if a risk free cycle exists in the graph. 
+
+\medskip
+\textit{Proof 2}: The algorithm only returns true if there's a risk free cycle. 
+
+\medskip
+Because of the if-condition on Bellman Ford, this algorithm only returns true if a negative-weight cycle is detected in the converted graph. By the algebraic reverse of Lemma 1, such a cycle $C$ only exists when $r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a} > 1$. So, the algorithm only returns true if a risk free cycle exists in the graph.  
+
+\medskip
+By the two proofs above, assert the correctness of the algorithm. 
+
+\medskip
+\textbf{Runtime}: \\ 
+Let $V$ be the number of vertices and $E$ be the number of edges in the input graph. This algorithm makes the following assumptions compatible with common implementations of Kosaraju's Algorithm and the Bellman Ford algorithm: (1) Kosaraju's algorithm runs in time $O(V + E)$ given an adjacency list; (2) Kosaraju's algorithm can return a list of strongly connected components each containing a list of vertices and a list of edges without affecting its asymptotic runtime or correctness; (3) Bellman Ford takes time $O(VE)$ when given a list of vertices and a distinct list of edges. 
+
+\medskip
+Kosaraju's algorithm returns a list of length $S$ where $S$ is the number of SCCs in the graph and runs in time $O(V + E)$. Because the count of all vertices and edges in the graph is less than or equal to the count of all vertices and edges in all SCCs in the graph, assume without loss of generality that each SCC contains $O(\frac{V}{S})$ vertices and $O(\frac{E}{S})$ edges. Thus, converting the edges within each SCC takes time $O(\frac{E}{S})$ and Bellman Ford takes time $O(\frac{VE}{C})$. After $S$ iterations, the loop takes time $S \cdot (O(\frac{E}{S}) + O(\frac{VE}{S})) = O(VE) + O(E) = O(VE)$. Thus, the total algorithm runs in time $O(V + E) + O(VE) = O(VE)$. 
 \end{quote}
 
 \item %Pebbling Games.
