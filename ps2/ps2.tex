@@ -135,6 +135,59 @@ exists.  (You need not actually find it.)
 
 (Note: You may find the question above more accessible after the Monday (Feb. 5) lecture.)
 
+\begin{quote}
+  \color{purple}
+  \textit{Note: I made heavy use of CLRS Ch. 22 and the Wikipedia entry for the Bellman-Ford algorithm when working on this question. Answers are my own, but I can only take credit for my adaptation of their algorithm}. 
+
+  \medskip
+  This problem can be solved by modeling the inputs as a weighted directed graph and applying a variant of the Bellman-Ford algorithm. I chose Bellman-Ford over Djikstra's algorithm because I believe multiplying by numbers greater than one in this adaptation has the same effect as adding a negative number in a classic shortest paths representation. That said, consider this formalization of the problem:  
+
+  \medskip
+  \textbf{Algorithm}:
+  \begin{itemize}
+    \item Inputs: A graph consisting of vertices and edges. Each vertex must be capable of carrying a numeric field \texttt{vertex.val}, and each edge must carry an extra field \texttt{edge.rate} containing the exchange rate of converting from one vertex to another. Edge rates are assumed to be nonnegative, and it's assumed that no edges are self-loops.
+    \item Output: True if a risk-free exchange path exists starting at \texttt{start}, false if not. Such a risk-free path exists if a sequence of vertices $c_0, \dots, c_{n - 1}, c_0$ exists such that the edge rates between them multiplied together exceed 1. 
+  \end{itemize}
+
+  Consider this pseudocode, which is explained below: \\ 
+  \begin{verbatim}
+  type Vertex = (id, val);
+  type Edge = (vertex from, vertex to, exchange rate);
+
+  fn find_risk_free(
+      vertices: Vertex list, 
+      edges: Edge list, 
+      start: reference to Vertex 
+  ) -> bool:
+      for vertex in vertices:
+          vertex.val = 0;
+      start.val = 1;
+
+      for vertices.len() times:
+          for edge in edges:
+              if edge.to.val < edge.from.val * edge.rate:
+                  edge.to.val = edge.from.val * edge.rate;
+
+      let inf_cycle = false;
+      for edge in edges:
+          if edge.to.val < edge.from.val * edge.rate:
+              inf_cycle = true;
+              break;
+
+      return true if 
+          start.val > 1 
+          or 
+          pos_cycle is true and start.val is not 1
+  \end{verbatim}
+  The algorithm begins by setting every vertex's value to 0 except \texttt{start}, which is 1. In this algorithm, all nonzero \texttt{vertex.val} other than start hold the optimal product of all predecessors.  
+
+  \medskip
+  For a number of times equaling the number of vertices, consider every edge. If the conversion ratio of a vertex can be improved by updating its path membership to a different neighbor, the vertex is shifted. In this way, vertices continually shift towards their most optimal path among those currently discovered. This is parallel to the CLRS concept of "relaxation". After the main loop, a second loop is run to detect any cycles in the graph where every iteration of the cycle increases the values of its constituent vertices. If such a cycle is in the graph and part of a larger cycle with \texttt{start}, always return true. Otherwise, return true only if a path was found that returned to \texttt{start} and increased its value from 1. 
+
+  \medskip
+  \textbf{Correctness}: Here 
+\end{quote}
+
 \item %Pebbling Games.
 In this problem we consider two versions of ``Pebbling Games", a class of ``solitaire'' games (played by one player). In both versions, the input to the game  includes an undirected graph $G$ with $n$ vertices and $m$ edges, and positive integer parameters $c$ and $k\le n$. At the beginning of the game, the player is given $k$ pebbles which are placed on vertices $0$, $1$, \ldots, $k-1$. At any given moment of time, the $k$ pebbles are located at some $k$ (not necessarily distinct) vertices of the graph. In each move, the player can move any pebble to a vertex $v$, provided that prior to this move, at least $c$ vertices adjacent to $v$ have a pebble. (The pebble moved does not have to be one of those that start out adjacent to $v$.)
 \begin{enumerate}
