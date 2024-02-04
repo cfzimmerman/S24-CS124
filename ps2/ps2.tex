@@ -249,6 +249,101 @@ In this problem we consider two versions of ``Pebbling Games", a class of ``soli
     \item 
     {\bf (20 points)}
     In version 2 of the game, $c$ and $k$ are arbitrary and there is a special designated target vertex $t$ such that the player wins if they can place a pebble on $t$ in any finite number of moves. Give an algorithm to determine if a given graph $G$ has a winning strategy. For full credit, your algorithm should run in time at most $O(n^{2k})$. 
+    \begin{quote}
+      \color{purple}
+      \textit{Note: We haven't covered dynamic programming in class yet, but this was the only way I could think to solve this question. While it may not be the solution you're looking for, I believe it still should work}. 
+
+      \medskip
+      First, note that if $k == c == 1$, question $a$ applies and we know $t$ is reachable. Assume that $k$ is never less than $1$ because the pebble placement notation doesn't seem to support that. Outside of edge cases, an algorithm to solve this problem must search the graph. Consider the game as a state machine. Each vertex may have one of the $k$ pebbles on it, and pebbles can move based on the rules stated above. I propose an algorithm that DFS searches each of these states, caching previously searched states to prevent cycles and reduce time complexity. When a winning state is found, the search unwinds, returning true. Else, if every state reachable from start is searched and no winning state is found, false is returned. The algorithm below accomplishes this:
+
+      \medskip
+      Define \texttt{winnable} as a wrapper for search that catches the edge cases mentioned above and calls \texttt{search}. Define \texttt{search} as such a function: given a state $S$ representing the set of vertices with a pebble on them, return true if $t$ has a pebble on it. If the state has been searched before, return the result of the previous search. Else, for every vertex neighboring a pebble vertex in $S$, check if it's possible to move a pebble to that neighbor. If so, for every pebble that could be moved from a current vertex in $S$ to the new vertex, move that pebble and \texttt{search} the new state. If \texttt{search} returns true, return true. Else, keep searching until all states are exhausted, at which point return false. The pseudocode below implements this algorithm: 
+      \newpage
+
+    \begin{verbatim}
+    fn winnable(adj: graph as adjacency list, c: int, k: int, t: int) -> bool: 
+        assert k >= 1;
+        if k and c are both 1:
+            return true;
+        dp = Hashmap(set of vertices, boolean);
+        pebbles = { 0, 1, ..., k - 1 };
+        dp[pebbles] = true;
+        return search(adj, c, k, t, pebbles, dp);
+
+    fn search(
+        adj: graph as adjacency list,
+        c: int,
+        k: int,
+        target: int,
+        pebbles: set of vertices with pebbles on them,
+        dp: Hashmap(set of vertices, boolean),
+    ) -> bool: 
+        if target in pebbles:
+            return true;
+        
+        if pebbles in dp:
+            return dp[pebbles];
+
+        for v_pebble in pebbles:
+            for neighbor of v_pebble:
+                if neighbor in pebbles:
+                    continue;
+
+                adj_ct = 0;
+                for adj of neighbor:
+                    if adj in pebbles:
+                        adj_ct += 1;
+                if adj_ct < c:
+                    continue
+
+                for v_evict in pebbles:
+                    new_pebbles = pebbles - v_evict + neighbor;
+                    if search(adj, c, k, target, new_pebbles, dp) == true:
+                        dp[pebbles] = true;
+                        return true;
+
+         dp[pebbles] = false;
+         return false;
+    \end{verbatim}
+    \newpage
+
+    \textbf{Correctness}: \\ 
+    \textit{Lemma 0}, Every state reachable with fewer than $k$ pebbles is reachable with $k$ pebbles: Given any state reachable with fewer than $k$ pebbles, undo the previous state transition. Then, add pebbles to any vertex currently with a pebble until there are $k$ pebbles in the system. Because no vertices lost a pebble, the number of viable transition states has not decreased, so the state transition can be performed again. Because this applies to any transition with any nonzero number of pebbles, the claim must be true. 
+
+    \medskip
+    \textit{Lemma 0.5}, In two systems with the same number of pebbles in total, a system $A$ where each vertex with a pebble has one \textit{or more} pebbles has the same or fewer transition relations as a system $B$ where each vertex with a pebble has exactly one pebble assuming every pebble vertex in $A$ is a pebble vertex in $B$: Because both systems have the same number of pebbles, $A$ has the same or more possible transition states as $B$ because it has the same or more vertices with pebbles. This is because a non-pebble vertex is a valid transition no matter how many pebbles are on each of its neighbors as long as a neighbor has at least one pebble on it.    
+
+    \medskip
+    \textit{Lemma 1}, Only valid states are searched: A valid state is one that can be reached from the initial state by following the rules of the game. Proof by strong induction: 
+    \begin{itemize}
+      \item Base case: The initial state is definitionally valid.  
+      \item Inductive hypothesis: Assume the claim is true for all states up to the $k$th state transition.
+      \item Inductive step: At the $k + 1$ state transition, by the inductive hypothesis, the current state was reached in a valid way. At this step of iteration, if true is not returned, every pebble move to every viable neighbor vertex is considered. A pebble is only moved if the new vertex has at least $c$ neighbors with pebbles, satisfying that rule of the game. Any pebble can be moved to that vertex within the rules. In this way, a pebble is only moved if doing so generates a valid state. Thus, every state searched at this step is also a valid state. This proves the claim by induction
+    \end{itemize}
+
+    \medskip
+    \textit{Lemma 2}, Every reachable state is searched until there are no remaining states to search or true is returned: At each recursive step, every valid state transition one pebble move away from the current state is searched. Because already-searched states return immediately, only new states are recursively evaluated and searched. If any winning state is found, true is returned, and the call chain unwinds as all return true. Else, the search continues via DFS until every reachable state from start is searched. At that point, there are no more states to search, and the call chain unwinds returning false. In this way, either a winning state is found and true is returned or the entire set of reachable valid states is searched until false is returned. 
+
+    \medskip
+    \textit{Proof of correctness}, If there's a way to win the game, true is returned from the algorithm: First, assert from Lemma 0 and Lemma 0.5 that any winning state that can be found by putting pebbles on the same vertices is winnable by keeping pebbles on distinct vertices. Because of this, neither the algorithm nor correctness proof attend to the case of putting multiple pebbles on the same vertex. 
+
+    \medskip
+    Considering the pseudocode, if $k == c == 1$, assert from the proof for part $a$ that every vertex can be reached and thus a winning strategy is always possible. Else, assert from Lemma 2 that every possible state reachable from the initial state is searched. If any such state has a pebble on vertex $t$, then true is returned from the algorithm. Else, if no state reachable from the initial state by the transition rules has a pebble on $t$, then false is returned. Both outcomes satisfy the rules of the game.
+
+    \medskip
+    If true is returned from the algorithm, there's a way to win the game: Assert from Lemma 1 that only valid states are searched. If \texttt{search} is called on a state and a pebble is on $t$ at that state, true is returned. Aside from that case, true is only ever returned if a recursive call returns true, so true is only ever returned if a valid state is reached with a pebble on $t$. By definition, that indicates a valid way to win the game. 
+
+    \medskip
+    By these two cases, the algorithm correctly solves the problem.
+
+    \medskip 
+    \textbf{Runtime}: \\
+    First, consider the complexity of a single call to \texttt{search}. If the state has already been searched or the state is winning, the function exits in $O(1)$. Else, the pebble loop takes $O(k)$, iterating neighbors takes $O(n)$, counting pebble neighbors takes $O(n)$, iterating swap pairs takes $O(k)$, and generating a new pebble set takes $O(k)$. Within the bottom loop, expect search to be recursively called another $O(n)$ times because winning states and \texttt{dp} aren't checked until the recursive call. Thus, calling \texttt{search} on a new, non-winning state takes $O(kn(n + k(k + n))) = O(kn^2 + k^3n + kn^2)$ time, which simplifies to $O(n^2)$ because $k$ is a constant. A full search is performed on at most every possible state in the state space. Because the state space consists of $k$-sized combinations of $n$, there are $n$ choose $k$ combinations in the state space. Assert that $n$ choose $k$ is $O(n^k)$. 
+
+    \medskip
+    Because of the initial check in \texttt{winnable}, the algorithm returns true in $O(1)$ when $k == c == 1$. Else, it runs in $O(n^k \cdot n^2) = O(n^{k + 2})$. By these two cases, note that the algorithm always runs in time $O(n^{2k})$ assuming $k \geq 1$.  
+
+    \end{quote}
     \item {\bf (0 points, optional)}\footnote{This question will not be used for grades, but try it if you're interested.
     It may be used for recommendations or TF hiring.} 
     Find an algorithm for version 2 of the game which runs in time $o(n^{2k})$---the faster, the better!

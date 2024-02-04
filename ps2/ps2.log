@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  3 FEB 2024 21:27
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  4 FEB 2024 16:34
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -524,42 +524,60 @@ Overfull \hbox (7.13846pt too wide) in paragraph at lines 184--185
 ithm only re-turns true if a negative-
  []
 
-[4] [5]
+[4] [5] [6] [7]
+Overfull \hbox (43.53949pt too wide) in paragraph at lines 307--307
+ []    \T1/cmtt/m/n/10.95 fn winnable(adj: graph as adjacency list, c: int, k: 
+int, t: int) -> bool:[] 
+ []
+
+
+Overfull \hbox (20.906pt too wide) in paragraph at lines 307--307
+ []                    \T1/cmtt/m/n/10.95 if search(adj, c, k, target, new_pebb
+les, dp) == true:[] 
+ []
+
+[8]
+LaTeX Font Info:    Trying to load font information for TS1+futs on input line 
+319.
+ (/usr/local/texlive/2023/texmf-dist/tex/latex/fourier/ts1futs.fd
+File: ts1futs.fd 2003/09/14 Fontinst v1.801 font definitions for TS1/futs.
+) [9]
 LaTeX Font Info:    Font shape `FMX/futm/m/n' will be
-(Font)              scaled to size 8.27998pt on input line 253.
+(Font)              scaled to size 8.27998pt on input line 348.
 LaTeX Font Info:    Font shape `FMX/futm/m/n' will be
-(Font)              scaled to size 6.99199pt on input line 253.
+(Font)              scaled to size 6.99199pt on input line 348.
 LaTeX Font Info:    Font shape `U/futm/m/n' will be
-(Font)              scaled to size 8.27998pt on input line 253.
+(Font)              scaled to size 8.27998pt on input line 348.
 LaTeX Font Info:    Font shape `U/futm/m/n' will be
-(Font)              scaled to size 6.99199pt on input line 253.
- [6]
-<tonystarkgrid.png, id=29, 320.19624pt x 279.0425pt>
+(Font)              scaled to size 6.99199pt on input line 348.
+
+[10]
+<tonystarkgrid.png, id=42, 320.19624pt x 279.0425pt>
 File: tonystarkgrid.png Graphic file (type png)
 <use tonystarkgrid.png>
-Package pdftex.def Info: tonystarkgrid.png  used on input line 269.
+Package pdftex.def Info: tonystarkgrid.png  used on input line 364.
 (pdftex.def)             Requested size: 187.89914pt x 163.75226pt.
- [7 <./tonystarkgrid.png>] [8] (./ps2.aux) ) 
+ [11 <./tonystarkgrid.png>] [12] (./ps2.aux) ) 
 Here is how much of TeX's memory you used:
- 5139 strings out of 476025
- 78640 string characters out of 5790017
+ 5166 strings out of 476025
+ 79074 string characters out of 5790017
  1869388 words of memory out of 5000000
- 25457 multiletter control sequences out of 15000+600000
- 589996 words of font info for 125 fonts, out of 8000000 for 9000
+ 25479 multiletter control sequences out of 15000+600000
+ 590432 words of font info for 127 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 62i,13n,67p,1471b,452s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2023/texmf-dist
-/fonts/type1/public/fourier/fourier-mex.pfb></usr/local/texlive/2023/texmf-dist
-/fonts/type1/public/fourier/fourier-mlit.pfb></usr/local/texlive/2023/texmf-dis
-t/fonts/type1/public/fourier/fourier-ms.pfb></usr/local/texlive/2023/texmf-dist
-/fonts/type1/adobe/utopia/putb8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/
-type1/adobe/utopia/putr8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/a
-dobe/utopia/putri8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/
-cm-super/sftt1095.pfb>
-Output written on ps2.pdf (8 pages, 258366 bytes).
+ 62i,13n,67p,1471b,483s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2023/texmf-di
+st/fonts/type1/public/fourier/fourier-mex.pfb></usr/local/texlive/2023/texmf-di
+st/fonts/type1/public/fourier/fourier-mlit.pfb></usr/local/texlive/2023/texmf-d
+ist/fonts/type1/public/fourier/fourier-ms.pfb></usr/local/texlive/2023/texmf-di
+st/fonts/type1/adobe/utopia/putb8a.pfb></usr/local/texlive/2023/texmf-dist/font
+s/type1/adobe/utopia/putr8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1
+/adobe/utopia/putri8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/publi
+c/cm-super/sftt1095.pfb>
+Output written on ps2.pdf (12 pages, 269102 bytes).
 PDF statistics:
- 73 PDF objects out of 1000 (max. 8388607)
- 44 compressed objects within 1 object stream
+ 85 PDF objects out of 1000 (max. 8388607)
+ 52 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  11 words of extra memory for PDF output out of 10000 (max. 10000000)
 
