@@ -200,6 +200,52 @@ In this problem we consider two versions of ``Pebbling Games", a class of ``soli
     \item 
     {\bf (20 points)}
     In version 1 of the game, we have $c=k=1$ and so the unique pebble effectively moves across an edge of the graph. In this version, the player wins if there is a strategy that traverses every edge (in both directions) in exactly $2m$ moves, where $m$ is the number of edges of $G$. Give a winning strategy (i.e., an algorithm that outputs an order in which the edges are traversed) for the player for every connected graph $G$. 
+    \begin{quote}
+      \color{purple}
+      Assume the input graph is given as an adjacency list hash map where each key is a vertex number and each value is a set of the vertex numbers adjacent to the key vertex. Further assume that undirected edges are unique (because they're in a set) and that an edge from $a$ to $b$ is represented with $b$ in the set for $a$ and $a$ in the set for $b$. Assume the output path is a list of vertices such that any two adjacent vertices represent an edge to be traversed in order from left to right.  
+
+      \medskip
+      Consider this algorithm based on DFS: Let there be a function \texttt{search} that takes the adjacency list of edges, the current vertex number, and the path list. The initial call is the full adjacency list, vertex 0, and an empty list. The search function first adds its id to the \texttt{path}. Then, while its list of adjacent edges is not empty, it pops a neighbor, removes itself from its neighbor's list, searches the neighbor, and pushes its id to the \texttt{path} again. Finally, it returns the \texttt{path} list. Here's pseudocode for such an algorithm: 
+
+  \begin{verbatim}
+  fn search(
+      edges: Hash map(vertex num, neighbor set), 
+      curr: vertex num, 
+      path: vertex list
+  ) -> vertex list:
+      path.push(curr);
+
+      while edges[curr] is not empty:
+          neighbor = pop from edges[curr];
+          remove curr from edges[neighbor];
+          search(edges, neighbor, path);
+          path.push(curr);
+
+      return path;
+  \end{verbatim}
+
+  \textbf{Correctness}: \\
+  In the proofs below, define searching an edge $(v_i, v_k)$ as calling \texttt{search} from vertex $v_i$ on a neighbor $v_k$.
+
+  \medskip
+  \textit{Lemma 1}: Once an edge $(v_i, v_k)$ is searched, it is never searched again. All edges are stored in the adjacency list. The only way an edge is searched if it is selected and removed entirely from the adjacency list within the while loop. After this, it can never be found and searched again because it has been deleted.
+
+  \medskip
+  \textit{Lemma 2}: Every edge is searched exactly once. By Lemma 1, an edge is not searched more than once. The input graph is connected, so every vertex is reachable from the start. The loop searches all edges neighboring the current vertex. All vertices are reachable from the start, and edges are only deleted once they've been searched. So, every vertex is reached by \texttt{search}, impliying that every edge is searched. Thus, every edge is searched once.
+
+  \medskip
+  \textit{Lemma 3}: \texttt{search} from $v_i$ to $v_k$ crosses the edge between them exactly twice. Calling search on $v_k$ from $v_i$ crosses the edge once. Because the edge is deleted, the recursive search starting at $v_i$ will not reverse search to $v_k$. Because the number of edges is finite and Lemma 2 asserts that every edge is searched once, the recursive call will eventually unwind, returning to $v_k$, crossing the edge a second time. Because the edge was previously deleted from the adjacency list, it will never be crossed again. 
+      
+  \medskip
+  \textit{Lemma 4}: The \texttt{path} list mirrors the search path described in the lemmas above. For any vertex in any position along the search path, when the stack frame begins, its vertex id \texttt{curr} is pushed to the path. In the while loop, the recursion stack may grow, but every time it returns to the current frame, \texttt{curr} is pushed to \texttt{path} again. The \texttt{path} list is only ever mutated in this way according to the current frame's \texttt{curr}, so it must be the case that \texttt{path} mirrors the algorithm's search path. 
+
+  \medskip 
+  \textit{Proof}: By Lemmas 1 through 4 above, assert that the algorithm searches every edge in the graph exactly once, crossing every edge exactly twice, and recording its path correctly in the \texttt{path} list. In returning \texttt{path} from the initial \texttt{search} call, then, the algorithm returns a winning strategy that correctly solves the problem.
+
+  \medskip 
+  \textbf{Runtime}: \\
+  Assume that list push, set pop, and set remove are constant time operations. Assert from the correctness proof that each edge is searched exactly once. So, \texttt{search} is called $m$ times where $m$ is the number of edges in the graph. If \texttt{search} is called $m$ times, it must be the case that the cumulative while loop iterations across all calls to \texttt{search} also execute on the order of $m$ times. Because all the other operations performed in \texttt{search} execute in constant time, the total complexity of calling \texttt{search} on a graph with E edges is $O(m)$. 
+    \end{quote}
     \item 
     {\bf (20 points)}
     In version 2 of the game, $c$ and $k$ are arbitrary and there is a special designated target vertex $t$ such that the player wins if they can place a pebble on $t$ in any finite number of moves. Give an algorithm to determine if a given graph $G$ has a winning strategy. For full credit, your algorithm should run in time at most $O(n^{2k})$. 
