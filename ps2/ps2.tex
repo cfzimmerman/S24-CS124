@@ -352,6 +352,57 @@ In this problem we consider two versions of ``Pebbling Games", a class of ``soli
 \item It sometimes happens that a patient who requires a kidney transplant has someone (e.g. a friend or family member) willing to donate a kidney, but the donor's kidney is incompatible with the patient for medical reasons. In such cases, pairs of a patient and donor can enter a \emph{kidney exchange}. In this exchange, patient-donor pairs $(p_i,d_i)$ may be able to donate to each other: there's a given function $c$ such that for each pair $(i,j)$ of patient-donor pairs, either $c(i,j) = 1$, meaning that $d_i$ can donate a kidney to $p_j$, or $c(i,j) = 0$, meaning that $d_i$ can't donate a kidney to $p_j$. As an example, suppose that we have five patient-donor pairs: $$(p_1,d_1), (p_2,d_2), (p_3,d_3), (p_4,d_4), (p_5,d_5).$$ Suppose also that $c(3,2) = c(3,1) = c(2,1) = c(1,3) = 1$, and that for all other inputs $c$ is 0. That is, in this example, $d_3$ can donate to $p_2$ or $p_1$, $d_2$ can donate to $p_1$, and $d_1$ can then donate to $p_3$ in the original $(p_3,d_3)$ pair. Then a set of these donations can simultaneously occur: e.g. $d_3$ gives a kidney to $p_2$, $d_2$ gives a kidney to $p_1$, and $d_1$ gives a kidney to $p_3$. (In this example, $(p_4,d_4)$ and $(p_5,d_5)$ don't participate). For every donor that donates a kidney, their respective patient must also receive a kidney, so if instead $c(1,3) = 0$, no donations could occur: $d_3$ will refuse to donate a kidney to $p_2$ because $p_3$ won't get a kidney.
 \begin{enumerate}
     \item {\bf (5 points)} Give an algorithm that determines whether or not a set of donations can occur. 
+      \begin{quote}
+        \color{purple}
+Consider this algorithm: represent the pairs as a directed graph. Each donation is an edge from donor $m$ to patient $n$. Because donations only occur when patient $m$ also has a donor, add another edge from patient $m$ to donor $m$. After all pairs are encoded this way, every donor will have edges out to a patient representing the donation, and every patient $m$ will have exactly one edge to donor $m$. After the input is encoded this way, return true if every disconnected component in the graph is a cycle. Otherwise, return false. Here's pseudocode for such an algorithm:
+
+  \begin{verbatim}
+let STATE = unexplored or explored;
+
+fn valid_donations(pairs: (donor m, patient n) list) -> bool:
+    let (adj, states) = encode_pairs(pairs);
+    for curr_vertex in states:
+        if states.curr_vertex is explored:
+            continue;
+        if find_cycle(adj, states, curr_vertex) doesn't return Some(curr_vertex): 
+            return false;
+    return true;
+
+fn encode_pairs(pairs: (donor m, patient n) list) -> (adjacency list, HashMap(vertex id, STATE)):
+    let adjacency list adj = HashMap(vertex id, neighbor set);
+    let states = HashMap(vertex id, STATE);
+    for (donor m, patient n) in pairs:
+        adj[donor m].add(patient n);
+        adj[patient m].add(donor m);
+        set states of donor m, patient n, and patient m to unexplored;
+    return (adj, states);
+
+
+fn find_cycle(adj, states, vertex) -> Option(vertex):
+    if states.vertex is explored:
+        return Some(vertex);
+
+    states.vertex = explored;
+    for neighbor in adj[vertex]:
+        if is_cycle(adj, states, neighbor) returns Some(v):
+            return Some(v);
+
+    return None;
+  \end{verbatim}
+
+  \textbf{Correctness}: \\ 
+  \textit{Lemma 1}, \texttt{encode_pairs} returns an adjacency list graph such that the matching can occur only if every disconnected component is a cycle: For every (donor $m$, patient $n$) pair, an edge is added from $m$ to $n$. This encodes the possibility of $m$ donating to $n$. Simultaneously, an edge is added from patient $m$ to donor $m$, which encodes donor $m$ having permission to donate. Because the only edges in this bipartite graph from patients to donors are created using the second method stated above, there's a number of capable donors exactly equal to the number of patients. Thus, if every donor has an edge in, every donor can have an edge out. If the edges in and out across the entire graph form a cycle, then there is an alternating walk between patients and donors such that every patient is matched with a donor. If every patient does not have a donor, then not every donor has permission from a patient to donate. In this circumstance, the graph will not have a cycle because the un-donated patient and the un-permitted donor will block the cycle from completing. Thus, the returned graph is encoded such that if every disconnected component is a cycle, the matching can occur.  
+
+  \medskip 
+  \textit{Lemma 2}, If find_cycle returns the vertex $v$ when called on $v$, then $v$ is the start of a cycle: \texttt{find_cycle} performs a DFS.  During the search, each vertex that's visited is marked explored before recursing. Similarly, every searched vertex will be unvisited until a previously-visited vertex is found. At that point, the call chain unwinds, returning that vertex. A visited vertex is only found if the search loops back on itself or ventures into a different cycle (in the context of this problem). If it loops back on itself and the point at which it does so is the point where the search began, that's definitionally a cycle. There's no other way that $v$ can be returned when \texttt{find_cycle} is initially called upon $v$, so it must be the case that \texttt{find_cycle} returning $v$ when called on $v$ indicates a cycle. In reverse, assume for purposes of contradiction that $v$ is the start of a cycle but $v$ is not returned from \texttt{find_cycle}. In the context of this question, vertices explored outside the current DFS are assumed to be in disjoint cycles, so that means the algorithm looped back on itself. But an algorithm looping back on itself at a place other than the start violates the formal definition of cycle. So, it must be the case that if $v$ is the start of a cycle, then $v$ is returned. 
+
+  \medskip
+  \textit{Proof of algorithm}, If the matching is valid, valid donations returns true: If the matching is valid, then \texttt{adj} is a directed graph where, for every disconnected component, there's a cycle  beginning at any member. Assert from Lemma 1 that the pairs are correctly encoded into a graph. By Lemma 1, every cycle within that graph will be detected, and the algorithm will return true if the matching is valid.
+
+  \medskip
+  If valid donations returns true, the matching is valid: Assume from Lemma 1 that input is correctly encoded. The algorithm will only return true if every call to \texttt{is_cycle} indicates a cycle. Assert the correctness of \texttt{is_cycle} from Lemma 2. If every disjoint component in the graph is a cycle, then the matching is valid.
+        
+      \end{quote}
     \item {\bf (20 points)} Suppose that no set of donations can occur in the previous part, but we add an altruistic donor, $d_0$. This altruistic donor is not bound to a patient, and is unconditionally willing to donate a kidney. Additionally, for each donation from $d_i$ to $p_j$, consider that there is some value $v_{ij}$ associated with that donation. Give an algorithm that returns the highest value donation sequence. For partial credit, you can consider the cases where 1) every donation has the same value or 2) donations have possibly-distinct but only positive values. 
 \end{enumerate}
     
