@@ -391,19 +391,121 @@ fn find_cycle(adj, states, vertex) -> Option(vertex):
   \end{verbatim}
 
   \textbf{Correctness}: \\ 
-  \textit{Lemma 1}, \texttt{encode_pairs} returns an adjacency list graph such that the matching can occur only if every disconnected component is a cycle: For every (donor $m$, patient $n$) pair, an edge is added from $m$ to $n$. This encodes the possibility of $m$ donating to $n$. Simultaneously, an edge is added from patient $m$ to donor $m$, which encodes donor $m$ having permission to donate. Because the only edges in this bipartite graph from patients to donors are created using the second method stated above, there's a number of capable donors exactly equal to the number of patients. Thus, if every donor has an edge in, every donor can have an edge out. If the edges in and out across the entire graph form a cycle, then there is an alternating walk between patients and donors such that every patient is matched with a donor. If every patient does not have a donor, then not every donor has permission from a patient to donate. In this circumstance, the graph will not have a cycle because the un-donated patient and the un-permitted donor will block the cycle from completing. Thus, the returned graph is encoded such that if every disconnected component is a cycle, the matching can occur.  
+  \textit{Lemma 1}, \texttt{encode\_pairs} returns an adjacency list graph such that the matching can occur only if every disconnected component is a cycle: For every (donor $m$, patient $n$) pair, an edge is added from $m$ to $n$. This encodes the possibility of $m$ donating to $n$. Simultaneously, an edge is added from patient $m$ to donor $m$, which encodes donor $m$ having permission to donate. Because the only edges in this bipartite graph from patients to donors are created using the second method stated above, there's a number of capable donors exactly equal to the number of patients. Thus, if every donor has an edge in, every donor can have an edge out. If the edges in and out across the entire graph form a cycle, then there is an alternating walk between patients and donors such that every patient is matched with a donor. If every patient does not have a donor, then not every donor has permission from a patient to donate. In this circumstance, the graph will not have a cycle because the un-donated patient and the un-permitted donor will block the cycle from completing. Thus, the returned graph is encoded such that if every disconnected component is a cycle, the matching can occur.  
 
   \medskip 
-  \textit{Lemma 2}, If find_cycle returns the vertex $v$ when called on $v$, then $v$ is the start of a cycle: \texttt{find_cycle} performs a DFS.  During the search, each vertex that's visited is marked explored before recursing. Similarly, every searched vertex will be unvisited until a previously-visited vertex is found. At that point, the call chain unwinds, returning that vertex. A visited vertex is only found if the search loops back on itself or ventures into a different cycle (in the context of this problem). If it loops back on itself and the point at which it does so is the point where the search began, that's definitionally a cycle. There's no other way that $v$ can be returned when \texttt{find_cycle} is initially called upon $v$, so it must be the case that \texttt{find_cycle} returning $v$ when called on $v$ indicates a cycle. In reverse, assume for purposes of contradiction that $v$ is the start of a cycle but $v$ is not returned from \texttt{find_cycle}. In the context of this question, vertices explored outside the current DFS are assumed to be in disjoint cycles, so that means the algorithm looped back on itself. But an algorithm looping back on itself at a place other than the start violates the formal definition of cycle. So, it must be the case that if $v$ is the start of a cycle, then $v$ is returned. 
+  \textit{Lemma 2}, If \texttt{find\_cycle} returns the vertex $v$ when called on $v$, then $v$ is the start of a cycle: \texttt{find\_cycle} performs a DFS.  During the search, each vertex that's visited is marked explored before recursing. Similarly, every searched vertex will be unvisited until a previously-visited vertex is found. At that point, the call chain unwinds, returning that vertex. A visited vertex is only found if the search loops back on itself or ventures into a different cycle (in the context of this problem). If it loops back on itself and the point at which it does so is the point where the search began, that's definitionally a cycle. There's no other way that $v$ can be returned when \texttt{find\_cycle} is initially called upon $v$, so it must be the case that \texttt{find\_cycle} returning $v$ when called on $v$ indicates a cycle. In reverse, assume for purposes of contradiction that $v$ is the start of a cycle but $v$ is not returned from \texttt{find\_cycle}. In the context of this question, vertices explored outside the current DFS are assumed to be in disjoint cycles, so that means the algorithm looped back on itself. But an algorithm looping back on itself at a place other than the start violates the formal definition of cycle. So, it must be the case that if $v$ is the start of a cycle, then $v$ is returned. 
 
   \medskip
   \textit{Proof of algorithm}, If the matching is valid, valid donations returns true: If the matching is valid, then \texttt{adj} is a directed graph where, for every disconnected component, there's a cycle  beginning at any member. Assert from Lemma 1 that the pairs are correctly encoded into a graph. By Lemma 1, every cycle within that graph will be detected, and the algorithm will return true if the matching is valid.
 
   \medskip
-  If valid donations returns true, the matching is valid: Assume from Lemma 1 that input is correctly encoded. The algorithm will only return true if every call to \texttt{is_cycle} indicates a cycle. Assert the correctness of \texttt{is_cycle} from Lemma 2. If every disjoint component in the graph is a cycle, then the matching is valid.
+  If valid donations returns true, the matching is valid: Assume from Lemma 1 that input is correctly encoded. The algorithm will only return true if every call to \texttt{is\_cycle} indicates a cycle. Assert the correctness of \texttt{is\_cycle} from Lemma 2. If every disjoint component in the graph is a cycle, then the matching is valid.
         
       \end{quote}
     \item {\bf (20 points)} Suppose that no set of donations can occur in the previous part, but we add an altruistic donor, $d_0$. This altruistic donor is not bound to a patient, and is unconditionally willing to donate a kidney. Additionally, for each donation from $d_i$ to $p_j$, consider that there is some value $v_{ij}$ associated with that donation. Give an algorithm that returns the highest value donation sequence. For partial credit, you can consider the cases where 1) every donation has the same value or 2) donations have possibly-distinct but only positive values. 
+      \begin{quote}
+        \color{purple}
+        Consider this algorithm: construct a graph using \texttt{encode\_pairs} from part $a$. Call the altruistic donor $d_a$. Begin a DFS from $d_a$ that considers every possible path and returns the path with the greatest value. Return that path and value. Such a search relies on properties proven below and is sped up by caching. Assume that the value of a donation is returned by an input utility function that returns a value given a donor and a patient. My algorithm runs on a modified version that only returns the value of the input function when the edge is from a donor, else it returns 0. Assume the initially-given list of pairs is not empty. Pseudocode below: 
+        \begin{verbatim}
+        #define empty linked list = ();
+
+        let global cache = HashMap(vertex, (value, linked list path));
+        let global visiting = empty vertex set;
+
+        function eval(value: input utility function) -> function:
+            return function eval(edge from, edge to) -> value:
+                if edge is from a patient, return 0;
+                if edge is from a donor, return value(edge from, edge to);
+
+        fn best_seq(
+            pairs: (donor m, patient n) list,
+            value: input utility function,
+        ) -> (value, path):
+            let (adj, _) = encode_pairs(pairs);
+            adj[altruistic donor] = empty set;
+            for (_, patient) in pairs:
+                adj[altruistic donor].add(patient);
+
+            let (val, list) = val_of_match(adj, altruistic donor);
+            let new_matchings = condense_path(list);
+            return (val, list);
+
+        fn val_of_match(adj: adjacency list, curr: vertex) -> (value, path):
+            if curr in visiting:
+                return (0, ());
+            if curr in cache:
+                return cache[curr];
+
+            visiting.add(curr);
+            let best = (-infinity, ());
+            for neighbor of adj[curr]:
+                let (val, path) = val_of_match(adj, neighbor);
+                let utility_of_match = val + eval(curr, neighbor);
+                if utility_of_match > best_val:
+                    best.value = utility_of_match;
+                    best.path = curr :: path; // prepend to linked list
+              visiting.remove(curr);
+
+              if best_val is still -infinity:
+                  return (0, curr :: ());
+              cache[curr] = best;
+              return best;
+
+          fn condense_path(
+              list: linked list of donor-patient pairs
+          ) -> list of (donor m, patient n) pairs:
+              let matched_pairs = [];
+              while list has at least two elements: 
+                  (donor, patient) = take first two from list;
+                  matched_pairs.push((donor, patient));
+              return matched_pairs;
+        \end{verbatim}
+
+
+      \medskip
+        \textbf{Correctness}: \\ 
+      \textit{Lemma 1}, if a matching does not begin at $d_a$, it is not viable. Assume for purposes of contradiction there's an input where no donations can occur without $d_a$, but, after adding $d_a$, there is a viable matching not beginning at $d_a$. Assert from Lemma 1 in part $a$ that the graph correctly encodes the input pairs. Because $d_a$ has no edges in, there is no way for the matching to include $d_a$. Thus, $d_a$ can be removed from the graph without changing the matching. Now, we have the input graph, but there is a valid matching. This contradicts the assumption that no donations can occur without $d_a$, so it must be the case that any valid matching on such a graph begins at $d_a$.
+
+      \medskip
+      \textit{Lemma 2}, any path beginning at $d_a$ is allowed under the rules of donation. Prove by induction on the number of unique edges from $d_a$:
+      \begin{itemize}
+        \item Base case: Because $d_a$ will donate no matter what, any edge from $d_a$ to a patient is permitted. 
+        \item Inductive hypothesis: Any valid path $k$ edges from $d_a$ is permitted.  
+        \item Inductive step: The $k + 1$ edge could come from either a patient or a donor. If the edge comes from a patient, that means the patient was donated to. Because the patient was donated to, their donor is free to donate. Because the patient's only edge is to their donor, this edge is permitted. If the edge comes from a donor, because $d_a$'s initial edge was to a patient, the alternating walk of the graph implies that the current donor's patient was donated to. When this is the case, the donor is free to donate to anyone they have an edge to. In either case, any edge coming from the current vertex is permitted. By induction, this proves the claim. 
+      \end{itemize}
+
+      \medskip
+      \textit{Lemma 2.5}, if \texttt{val\_of\_match} returns optimal results, the path list correctly reflects the optimal matching. For every neighbor that's searched, the path is chosen that optimizes the value of the match. Assuming the subproblem returns a correctly constructed path, curr adds itself to the front of the path, which extends the path in a valid way for the current problem. Because the operation prepends to the list, any cached results that might point to nodes later in the list are still valid because the list is only ever mutated by extending the head. 
+
+      \medskip
+      \textit{Lemma 3}, if initially called from $d_a$, \texttt{val\_of\_match} returns the highest valued unique path from its given vertex. Assert from Lemmmas $1$ and $2$ that every path of unique edges is viable. Prove by induction on the DFS call stack: 
+      \begin{itemize}
+        \item Base case 1: The search is at a sink when it is sent to a vertex that has already been visited. In that case, it returns 0 and an empty path because a highest value from this position is nonexistent.
+        \item Base case 2: The search is also at a sink when it is sent to a vertex with no out-edges. In that case, the search returns that no more value could be found from that vertex with an empty value and itself in the path. Both base cases return the best possible value from that vertex, which is 0.
+        \item Inductive hypotheses: assume every recursive call returns the highest-valued unique path from the vertex it's called upon. 
+        \textit Inductive step: If the given vertex is not a base case, it considers all outbound edges. By the inductive hypothesis, all recursive calls return the best possible value and path from that vertex. Thus, among all best possible paths to take, the edge with the highest value is chosen, updated, and returned. In this way, the current frame of \texttt{val\_of\_match} also returns the highest valued unique path. Assert from lemma 2.5 that the linked list properly encodes this path. This proves the claim inductively.
+      \end{itemize}
+
+      \medskip
+      \textit{Lemma 4}, if an input path to \texttt{condensed\_path} is valid, the output pairs are also valid. Because the donation graph is bipartite, any valid path will alternate between donors and patients. A pairing is specified as a donor to a patient. Because the path must begin with the donor $d_a$ by Lemma 1, \texttt{condensed\_path} returns a list of (donor, patient) tuples in the order of their search path. Thus, if the search path represents a valid sequence of donations, the pairs returned from \texttt{condensed\_path} are valid. There is an edge case in which an additional donor appears at the end of the path with nobody to donate to, but this is addressed by the while loop exiting when there are only zero or one elements left in the list. Because \texttt{condensed\_path} doesn't add pairs to the returned list for any other reason, all output paths must be valid given valid input paths.  
+
+      \medskip
+      \textit{Proof of correctness}, if there is a highest value matching, it is returned. Assert from Lemma 1 in part $a$ that the input pairs are encoded into a valid graph. The altruistic donor is also introduced with an edge to every patient. Assert from Lemmas 1 and 2 that a maximum matching must begin from this donor. The updated \texttt{eval} function returns $0$ on edges unexpected by the input utility function, so the highest-value path still accomodates edges from patients back to donors. Assert from Lemma 3 that the search is a sequence of optimal subproblems, where each subproblem is solved correctly and cached, meaning that the result from the initial call must represent a maximum-value path through the graph. Assert the correctness of path decoding from Lemma 4. Thus, if a highest-value matching exists, it is found by the optimizing DFS, and the path of such a search is found, decoded, and returned. 
+      
+      \medskip
+      If a matching is returned, it is the highest-value valid matching possible. Assert from Lemmas 1 and 2 that the path searched by \texttt{best\_seq} is valid, and assert from Lemma 3 that \texttt{val\_of\_match} returns a unique, optimal path. There is no other way a path is generated and returned. Thus, any list of pairs returned from \texttt{best\_seq} is the highest-valued matching supported by the graph.
+
+      \medskip
+      \textbf{Runtime}: \\ 
+      The input graph may have any number of edge-pairs for its vertices, so constructing the initial graph takes time $O(V + E)$ where $V$ is the number of patients and $E$ is the number of pair assignments. Adding edges for $d_a$ also takes time linear in the number of patients. 
+
+      \medskip
+      Consider the complexity of a single call to \texttt{val\_of\_match}: Assume checking and mutating the the set and cache take constant time. Prepending to the path linked list also takes constant time. The recursive search runs in time linear to the number of edges a node has. 
+
+      \medskip
+      Because of the visited set, a single DFS searches at-most the entire graph and takes time $O(V + E)$. After such a search, however, the optimal sub-results of searching from any node in the graph are cached, making every subsequent call to search $O(1)$. Thus, the graph is searched in its entirety only once, making the total cost of \texttt{val\_of\_match} that of caching the entire state space, $O(V  + E)$. Because list decoding also takes time linear in the number of vertices in the graph, the total runtime of this algorithm is $O(V + E)$.
+      \end{quote}
 \end{enumerate}
     
 
