@@ -137,7 +137,7 @@ exists.  (You need not actually find it.)
 
 \begin{quote}
   \color{purple}
-  \textit{Note: Assertions about the Bellman Ford algorithm and Kosaraju's algorithm come from lecture notes, CLRS Ch. 22, and the respective Wikipedia pages}.
+  \textit{Note: Assertions about the Bellman Ford algorithm and Kosaraju's algorithm come from lecture notes and CLRS Ch. 22}.
 
   \medskip
   Let the problem be defined as above with inputs representing a directed graph as an adjacency list of currencies and their exchange rates. In this explanation, assume a currency is synonymous with a vertex and a weighted edge is parallel to $r_{i,j}$ in the question.
@@ -160,7 +160,7 @@ exists.  (You need not actually find it.)
 
 \medskip 
 \textbf{Correctness}:\\ 
-\textit{Lemma 1}: If a cycle $c_a, c_b, \dots, c_k, c_a$ exists such that $r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a} > 1$, then $-\lg r_{a, b} - \lg r_{b, b + 1} - \dots - \lg r_{k, a} < 0$. Proof by this series of algebraic manipulations: 
+\textit{Lemma 1}, if a cycle $c_a, c_b, \dots, c_k, c_a$ exists such that $r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a} > 1$, then $-\lg r_{a, b} - \lg r_{b, b + 1} - \dots - \lg r_{k, a} < 0$: Proof by this series of algebraic manipulations: 
 \begin{align*}
     && r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a} > 1 && \text{Initial} && \\
     && \lg (r_{a, b} \cdot r_{b, b + 1} \cdot \dots \cdot r_{k, a}) > \lg 1 && \text{Apply log} && \\
@@ -169,7 +169,7 @@ exists.  (You need not actually find it.)
 \end{align*} 
 
 \medskip
-\textit{Lemma 2}: If such a cycle from Lemma 1 exists in the graph, then it's an SCC. Let $C = c_a, c_b, \dots, c_k, c_a$ be the vertices of such a cycle. Let $c_m$ be any of these vertices in $C$. By definition of cycle, $c_m$ is reachable from $c_a$. By definition of cycle, $c_a$ is reachable from $c_m$. Because $c_m$ can be any vertex in $C$, every vertex in the cycle is reachable from every other vertex in the cycle, making it an SCC. 
+\textit{Lemma 2}, if such a cycle from Lemma 1 exists in the graph, then it's an SCC: Let $C = c_a, c_b, \dots, c_k, c_a$ be the vertices of such a cycle. Let $c_m$ be any of these vertices in $C$. By definition of cycle, $c_m$ is reachable from $c_a$. By definition of cycle, $c_a$ is reachable from $c_m$. Because $c_m$ can be any vertex in $C$, every vertex in the cycle is reachable from every other vertex in the cycle, making it an SCC. 
 
 \medskip
 \textit{Proof 1}: If there's a risk free cycle $C$ as defined above, the algorithm returns true. 
@@ -228,19 +228,22 @@ In this problem we consider two versions of ``Pebbling Games", a class of ``soli
   In the proofs below, define searching an edge $(v_i, v_k)$ as calling \texttt{search} from vertex $v_i$ on a neighbor $v_k$.
 
   \medskip
-  \textit{Lemma 1}: Once an edge $(v_i, v_k)$ is searched, it is never searched again. All edges are stored in the adjacency list. The only way an edge is searched if it is selected and removed entirely from the adjacency list within the while loop. After this, it can never be found and searched again because it has been deleted.
+  \textit{Lemma 1}, once an edge $(v_i, v_k)$ is searched, it is never searched again: All edges are stored in the adjacency list. The only way an edge is searched if it is selected and removed entirely from the adjacency list within the while loop. After this, it can never be found and searched again because it has been deleted.
 
   \medskip
-  \textit{Lemma 2}: Every edge is searched exactly once. By Lemma 1, an edge is not searched more than once. The input graph is connected, so every vertex is reachable from the start. The loop searches all edges neighboring the current vertex. All vertices are reachable from the start, and edges are only deleted once they've been searched. So, every vertex is reached by \texttt{search}, impliying that every edge is searched. Thus, every edge is searched once.
+  \textit{Lemma 2}, every edge is searched exactly once: By Lemma 1, an edge is not searched more than once. The input graph is connected, so every vertex is reachable from the start. The loop searches all edges neighboring the current vertex. All vertices are reachable from the start, and edges are only deleted once they've been searched. So, every vertex is reached by \texttt{search}, impliying that every edge is searched. Thus, every edge is searched once.
 
   \medskip
-  \textit{Lemma 3}: \texttt{search} from $v_i$ to $v_k$ crosses the edge between them exactly twice. Calling search on $v_k$ from $v_i$ crosses the edge once. Because the edge is deleted, the recursive search starting at $v_i$ will not reverse search to $v_k$. Because the number of edges is finite and Lemma 2 asserts that every edge is searched once, the recursive call will eventually unwind, returning to $v_k$, crossing the edge a second time. Because the edge was previously deleted from the adjacency list, it will never be crossed again. 
+  \textit{Lemma 3}, \texttt{search} from $v_i$ to $v_k$ crosses the edge between them exactly twice: Calling search on $v_k$ from $v_i$ crosses the edge once. Because the edge is deleted, the recursive search starting at $v_i$ will not reverse search to $v_k$. Because the number of edges is finite and Lemma 2 asserts that every edge is searched once, the recursive call will eventually unwind, returning to $v_k$, crossing the edge a second time. Because the edge was previously deleted from the adjacency list, it will never be crossed again. 
       
   \medskip
-  \textit{Lemma 4}: The \texttt{path} list mirrors the search path described in the lemmas above. For any vertex in any position along the search path, when the stack frame begins, its vertex id \texttt{curr} is pushed to the path. In the while loop, the recursion stack may grow, but every time it returns to the current frame, \texttt{curr} is pushed to \texttt{path} again. The \texttt{path} list is only ever mutated in this way according to the current frame's \texttt{curr}, so it must be the case that \texttt{path} mirrors the algorithm's search path. 
+  \textit{Lemma 4}, The \texttt{path} list mirrors the search path described in the lemmas above: For any vertex in any position along the search path, when the stack frame begins, its vertex id \texttt{curr} is pushed to the path. In the while loop, the recursion stack may grow, but every time it returns to the current frame, \texttt{curr} is pushed to \texttt{path} again. The \texttt{path} list is only ever mutated in this way according to the current frame's \texttt{curr}, so it must be the case that \texttt{path} mirrors the algorithm's search path. 
 
   \medskip 
-  \textit{Proof}: By Lemmas 1 through 4 above, assert that the algorithm searches every edge in the graph exactly once, crossing every edge exactly twice, and recording its path correctly in the \texttt{path} list. In returning \texttt{path} from the initial \texttt{search} call, then, the algorithm returns a winning strategy that correctly solves the problem.
+  \textit{Proof of correctness}: If a path is returned, it visits every vertex by traversing every edge twice. By Lemmas 1 through 3 above, assert that the algorithm searches every edge in the graph exactly once, crossing every edge exactly twice, and recording its path correctly in the \texttt{path} list. By Lemma 4, assert that such a is correctly encoded in the returned path. This is the only way the returned path is generated, so the returned path must correctly identify a traversal of the graph visiting every vertex and crossing every edge twice. 
+
+  \medskip
+  If a winning strategy exists, it is returned: assert from Lemmas 1 thorugh 3 that the graph search visits every vertex once and crosses every edge twice. In doing so, the search naturally generates a winning strategy and encodes into the returned path, which, by Lemma 4, correctly encodes the search path. 
 
   \medskip 
   \textbf{Runtime}: \\
@@ -368,7 +371,10 @@ fn valid_donations(pairs: (donor m, patient n) list) -> bool:
             return false;
     return true;
 
-fn encode_pairs(pairs: (donor m, patient n) list) -> (adjacency list, HashMap(vertex id, STATE)):
+fn encode_pairs(pairs: (donor m, patient n) list) -> (
+  adjacency list, 
+  HashMap(vertex id, STATE)
+):
     let adjacency list adj = HashMap(vertex id, neighbor set);
     let states = HashMap(vertex id, STATE);
     for (donor m, patient n) in pairs:
@@ -394,14 +400,17 @@ fn find_cycle(adj, states, vertex) -> Option(vertex):
   \textit{Lemma 1}, \texttt{encode\_pairs} returns an adjacency list graph such that the matching can occur only if every disconnected component is a cycle: For every (donor $m$, patient $n$) pair, an edge is added from $m$ to $n$. This encodes the possibility of $m$ donating to $n$. Simultaneously, an edge is added from patient $m$ to donor $m$, which encodes donor $m$ having permission to donate. Because the only edges in this bipartite graph from patients to donors are created using the second method stated above, there's a number of capable donors exactly equal to the number of patients. Thus, if every donor has an edge in, every donor can have an edge out. If the edges in and out across the entire graph form a cycle, then there is an alternating walk between patients and donors such that every patient is matched with a donor. If every patient does not have a donor, then not every donor has permission from a patient to donate. In this circumstance, the graph will not have a cycle because the un-donated patient and the un-permitted donor will block the cycle from completing. Thus, the returned graph is encoded such that if every disconnected component is a cycle, the matching can occur.  
 
   \medskip 
-  \textit{Lemma 2}, If \texttt{find\_cycle} returns the vertex $v$ when called on $v$, then $v$ is the start of a cycle: \texttt{find\_cycle} performs a DFS.  During the search, each vertex that's visited is marked explored before recursing. Similarly, every searched vertex will be unvisited until a previously-visited vertex is found. At that point, the call chain unwinds, returning that vertex. A visited vertex is only found if the search loops back on itself or ventures into a different cycle (in the context of this problem). If it loops back on itself and the point at which it does so is the point where the search began, that's definitionally a cycle. There's no other way that $v$ can be returned when \texttt{find\_cycle} is initially called upon $v$, so it must be the case that \texttt{find\_cycle} returning $v$ when called on $v$ indicates a cycle. In reverse, assume for purposes of contradiction that $v$ is the start of a cycle but $v$ is not returned from \texttt{find\_cycle}. In the context of this question, vertices explored outside the current DFS are assumed to be in disjoint cycles, so that means the algorithm looped back on itself. But an algorithm looping back on itself at a place other than the start violates the formal definition of cycle. So, it must be the case that if $v$ is the start of a cycle, then $v$ is returned. 
+  \textit{Lemma 2}, If \texttt{find\_cycle} returns the vertex $v$ when called on $v$, then $v$ is the start of a cycle: \texttt{find\_cycle} performs a DFS.  During the search, each vertex that's visited is marked explored before recursing. Similarly, every searched vertex will be unvisited until a previously-visited vertex is found. At that point, the call chain unwinds, returning that vertex. A visited vertex is only found if the search loops back on itself or ventures into a cycle elsewhere (in the context of this problem). If it loops back on itself and the point at which it does so is the point where the search began, that's definitionally a cycle. There's no other way that $v$ can be returned when \texttt{find\_cycle} is initially called upon $v$, so it must be the case that \texttt{find\_cycle} returning $v$ when called on $v$ indicates a cycle. In reverse, assume for purposes of contradiction that $v$ is the start of a cycle but $v$ is not returned from \texttt{find\_cycle}. In the context of this question, vertices explored outside the current DFS are assumed to be in disjoint cycles, so that means the algorithm looped back on itself. But an algorithm looping back on itself at a place other than the start violates the formal definition of cycle. So, it must be the case that if $v$ is the start of a cycle, then $v$ is returned. 
 
   \medskip
   \textit{Proof of algorithm}, If the matching is valid, valid donations returns true: If the matching is valid, then \texttt{adj} is a directed graph where, for every disconnected component, there's a cycle  beginning at any member. Assert from Lemma 1 that the pairs are correctly encoded into a graph. By Lemma 1, every cycle within that graph will be detected, and the algorithm will return true if the matching is valid.
 
   \medskip
   If valid donations returns true, the matching is valid: Assume from Lemma 1 that input is correctly encoded. The algorithm will only return true if every call to \texttt{is\_cycle} indicates a cycle. Assert the correctness of \texttt{is\_cycle} from Lemma 2. If every disjoint component in the graph is a cycle, then the matching is valid.
-        
+
+  \medskip
+  \textbf{Runtime}: \\ 
+  Encoding the graph takes time $O(V + E)$ where $V$ is the number donors and patients and $E$ is the number of pairs. $E$ is distinct because the potentially invalid matching may have many more edges than vertices. After that, \texttt{valid\_donations} searches the graph to determine if it consists entirely of one or more disjoint cycles. For every vertex that's visited, either it's in a cycle or it's not. If it is in a cycle, then the entire cycle is marked as explored and never visited again. If it's not in a cycle, then the call returns false and the algorithm returns early, indicating an invalid matching. Thus, at most the entire graph is searched in this way via DFS, generating a search complexity of $O(V + E)$. 
       \end{quote}
     \item {\bf (20 points)} Suppose that no set of donations can occur in the previous part, but we add an altruistic donor, $d_0$. This altruistic donor is not bound to a patient, and is unconditionally willing to donate a kidney. Additionally, for each donation from $d_i$ to $p_j$, consider that there is some value $v_{ij}$ associated with that donation. Give an algorithm that returns the highest value donation sequence. For partial credit, you can consider the cases where 1) every donation has the same value or 2) donations have possibly-distinct but only positive values. 
       \begin{quote}
@@ -413,10 +422,12 @@ fn find_cycle(adj, states, vertex) -> Option(vertex):
         let global cache = HashMap(vertex, (value, linked list path));
         let global visiting = empty vertex set;
 
-        function eval(value: input utility function) -> function:
-            return function eval(edge from, edge to) -> value:
-                if edge is from a patient, return 0;
-                if edge is from a donor, return value(edge from, edge to);
+        redefine function eval(edge from, edge to) -> value:
+            if edge is from a patient:
+                return 0;
+            if edge is from a donor:
+                return original value function(edge from, edge to);
+
 
         fn best_seq(
             pairs: (donor m, patient n) list,
@@ -504,7 +515,7 @@ fn find_cycle(adj, states, vertex) -> Option(vertex):
       Consider the complexity of a single call to \texttt{val\_of\_match}: Assume checking and mutating the the set and cache take constant time. Prepending to the path linked list also takes constant time. The recursive search runs in time linear to the number of edges a node has. 
 
       \medskip
-      Because of the visited set, a single DFS searches at-most the entire graph and takes time $O(V + E)$. After such a search, however, the optimal sub-results of searching from any node in the graph are cached, making every subsequent call to search $O(1)$. Thus, the graph is searched in its entirety only once, making the total cost of \texttt{val\_of\_match} that of caching the entire state space, $O(V  + E)$. Because list decoding also takes time linear in the number of vertices in the graph, the total runtime of this algorithm is $O(V + E)$.
+      Because of the visited set, a single DFS searches at-most the entire graph and takes time $O(V + E)$. After such a search, however, the optimal sub-results of searching from any node in the graph are cached, making every subsequent call to search $O(1)$. Thus, the graph is searched in its entirety only once, making the total cost of \texttt{val\_of\_match} that of exploring and caching the entire state space, $O(V  + E)$. Because list decoding also takes time linear in the number of vertices in the graph, the total runtime of this algorithm is $O(V + E)$.
       \end{quote}
 \end{enumerate}
     
