@@ -9,6 +9,7 @@
 \usepackage{algorithmic}
 \usepackage{enumitem}
 \usepackage{fourier}
+\usepackage{fancyvrb}
 \usepackage[normalem]{ulem}
 
 
@@ -40,7 +41,7 @@
 
 %{\color{brown}        \sout{\textbf{Your name:}}}
 
-        \textbf{Collaborators: }
+        \textbf{Collaborators: } Office hours.
 
         \textbf{No. of late days used on previous psets:} 0\\
         \textbf{No. of late days used after including this pset:} 0
@@ -359,6 +360,7 @@ In this problem we consider two versions of ``Pebbling Games", a class of ``soli
         \color{purple}
 Consider this algorithm: represent the pairs as a directed graph. Each donation is an edge from donor $m$ to patient $n$. Because donations only occur when patient $m$ also has a donor, add another edge from patient $m$ to donor $m$. After all pairs are encoded this way, every donor will have edges out to a patient representing the donation, and every patient $m$ will have exactly one edge to donor $m$. After the input is encoded this way, return true if every disconnected component in the graph is a cycle. Otherwise, return false. Here's pseudocode for such an algorithm:
 
+\newpage
   \begin{verbatim}
 let STATE = unexplored or explored;
 
@@ -533,8 +535,93 @@ If an Iron-Man tries to move off the grid or into an obstacle, it merely stays i
     
 \begin{enumerate}
     \item {\bf (10 points)} Give and explain an asymptotic upper bound on how many possible positions there are for the pair of Iron-Men, and explain why no better asymptotic upper bound is possible.
+      \begin{quote}
+        \color{purple}
+        Because of obstructions and borders, IM1 and IM2 can reposition themselves relative to each other. Their relative positions are thus able to traverse the state space somewhat freely. Because of this, given enough moves, IM1 and IM2 must be capable of traversing on the order of their entire state space, yielding an upper bound of $O(n^4)$ possible positions.
+
+        \medskip 
+        This is also a lower bound. On any given n x n graph, there may exist obstructions such that IM1 can back IM2 into a corner, reposition it, and release IM2 back to freely traverse the graph 
+via its relation to IM1 (and vice versa). IM1 can roam the graph as it pleases given borders and obstructions, so obstructions ensure that the state space is $\Omega(n^4)$. Simultaneously, even if, for example, 99 percent of the graph is covered by obstructions, that's still just a scalar in relation to n, so obstructions also cannot reduce the asymptotic size of the graph state space.
+      \end{quote}
     \item {\bf (20 points)} Give an algorithm to find the cheapest sequence of $\{\mathrm{L}, \mathrm{R}, \mathrm{U}, \mathrm{D}\}$ moves (that is, the one that requires you to buy the smallest amount of robot fuel) that will bring both Iron-Men home to New York.
 Hint: Try to represent the position of the two Iron-Men as a single vertex in some graph. For full credit, it suffices to find an $O\left(n^8\right)$ algorithm, but an $O\left(n^4 \log n\right)$ algorithm may be eligible for an exceptional score.
+\begin{quote}
+  \color{purple}
+  Consider this algorithm: given $n$, positions, obstacles, and a cost function, construct a 4-dimensional graph where keys $(x_1, y_1, x_2, y_2)$ correspond to IM1 and IM2's positions respectively. Iterate for each of those positional dimensions and consider the possible state transitions either of the two suits could initiate. This needs to examine up, down, left, and right options in addition to borders and obstacles. The two suits might generate duplicate edges, so graph edges must be maintained in a set. 
+
+  \medskip 
+  Assume that fuel cost is always nonnegative, and define an updated cost function to return the cost of moving both suits on the 4d graph from the cost of moving one suit on the 2d graph. Run Djikstra's algorithm on the graph from the 4d coordinate placing IM1 in LA and IM2 in Dallas. From what's found, decode the path into LRUD directions and return the instructions along with the cost. Pseudocode below. Note that ".." before a data type destructures it: 
+
+\begin{Verbatim}[xleftmargin=-6em]
+type 4d coord = (IM1 x, IM1 y, IM2 x, IM2 y);
+
+fn cheapest_seq(
+    pos_la: (x, y) coord,
+    pos_dallas: (x, y) coord,
+    pos_ny: (x, y) coord,
+    obstacles: (x, y) coord list,
+    cost_fn: function mapping edges to costs,
+    n: int
+) -> cheapest:
+    
+   let graph = HashMap(4d coord, set of 4d coords):
+
+   let updated_cost_fn = function(v_from: 4d coord, v_to: 4d coord) -> cost {
+        return cost_fn(v_from.IM1, v_to.IM1) + cost_fn(f_from.IM2, v_to.IM2);
+   }
+    
+    for IM1_row in n:
+        for IM1_col in n:
+            for IM2_row in n:
+                for IM2_col in n:
+                    let key = (IM1_row, IM1_col, IM2_row, IM2_col); 
+                    for direction of up, down, left, right:
+                        for suit of IM1, IM2:    
+                            if suit cannot move in direction:
+                                continue;
+                            let other_new_pos = where other goes given suit's move;
+                            let (IM1_new_pos, IM2_new_pos) = label positions of suits;
+                            graph[key].add(..IM1_new_pos, ..IM2_new_pos);
+    
+    let start = (..pos_la, ..pos_dallas);
+    let distances, paths = Djikstra(graph, updated_cost_fn, start);
+
+    let end = (..pos_ny, ..pos_ny);
+    let min_cost = distances[end];
+    let moves = empty linked list;
+    for move beginning at paths[end];
+        let direction = decode move into direction;
+        direction :: moves; // prepend to linked list
+
+    return moves, min_cost;
+  \end{Verbatim}
+  
+  \textbf{Correctness}:\\ 
+  \textit{Lemma 1}, the set of reachable states is equal in the input and constructed graphs: Let P1/P2 be any two arbitrarily-chosen positions for the two iron men. If IM1 can move in a direction $x$, IM2 is either moved deterministically in another direction or it's blocked by a border or obstruction and vice versa. Thus, in the 2d graph, the reachable states from P1/P2 are the directions IM1 can move and the location that moves IM2 and vice versa. This is mirrored in the algorithm constructing the 4d graph, which considers each direction for each suit for each position and the edges that generates. New edges may be duplicate, but the adjacency list's edge set guarantees duplicates are filtered out. Because all the moves possible in the 2d graph are added to the 4d graph, it must be the case that any possible move in the 2d graph is encoded in its 4d counterpart. Similarly, because no other edges are added to the 4d graph, it must be the case that any move possible in the 4d graph is possible in the 2d graph.
+
+  \medskip
+  \textit{Lemma 2}, the cost of a path is the same between the 2d and 4d graphs: Prove this claim by strong induction on the cost of a path for two suits starting at positions $(x_1, y_1), (x_2, y_2)$ in the 2d graph and position $(x_1, y_1, x_2, y_2)$ in the 4d graph. Assert from Lemma 1 that any path in one version of the graph is possible in its counterpart graph.
+  \begin{itemize}
+    \item Base case: Initially, because no edges have been crossed, no costs have been accumulated. The path cost for both graph paths is 0.
+    \item Inductive hypothesis: Assume the iron men have followed identical paths and that the costs of such paths after $k$ moves are equal. For example, for their respective graphs at move $m$ where $0 \leq m \leq k$, every $(x_{1, m}, y_{1, m}), (x_{2, m}, x_{2, m})$ coordinate is equal to every $(x_{1, m}, y_{1, m}, x_{2, m}, x_{2, m})$ coord and the costs of such paths are identical.
+    \item Inductive step: At move $k + 1$, assert from Lemma 1 that IM1 and IM2 have the same set of possible moves across the two graphs. The cost of moving on the 2d graph is the cost of moving IM1 from coord $(x_{1, k}, y_{1, k})$ to $(x_{1, k + 1}, y_{1, k + 1})$ plus the cost of moving IM2 the same. By the definition of \texttt{updated\_cost\_fn}, the cost of moving the 4d coordinate with the same moves is identical. Let such a cost be $c$. Thus, the total cost is the path sum, assumed by the inductive hypothesis to be equal, plus $c$, which makes the cost of paths from 0 to $k + 1$ equal for both. This proves the claim inductively. 
+  \end{itemize}
+
+\medskip
+\textit{Proof of correctness}: \\ 
+If a lowest-cost path exists, the algorithm returns it: Assert from Lemma 1 that the 2d graph is properly translated into the 4d graph, and assert from Lemma 2 that path costs are the same between the two graphs. Thus, if a lowest-cost path exists in the 2d graph, the same path also exists in the 4d graph. From the correct encoding, assert the correctness of Djikstra's algorithm to find and return the shortest path from the start positions to where both suits end in New York. This assumes fuel cost is always nonnegative. Once costs and paths are returned, the path is decoded into {L, R, U, D} directions and returned along with the cost. The existence of a shorter path would contradict the correctness of Djikstra's algorithm given the correct graph encoding, so it must be the case that, if a lowest-cost path exists, it is returned.
+
+\medskip
+If the algorithm returns something, it's a lowest-cost path: Again assert the correctness of graph translation and path cost encoding from Lemmas 1 and 2. The encoded graph is processed by Djikstra's algorithm, and paths are returned. By decoding and returning the path from New York to the start positions, the algorithm is returning the path found by Djikstra's algorithm for such a route or nothing if it doesn't exist. Because Djikstra's algorithm is correct and my algorithm returns the path returned from Djikstra's algorithm, the path returned from my algorithm must be a shortest path if such a path exists.
+
+\medskip
+\textbf{Runtime}: \\ 
+Begin with the observation that both the 2d and 4d graphs have a constant number of edges relative to $n$, the size of the input graph. So, any runtime expressible in terms of vertices and edges is just as correctly expressed in terms of vertices.
+
+\medskip
+While there's much constant-time conditional logic in the bottom of the graph construction loop, constructing the 4d graph ultimately takes time $O(n^4)$. After the graph is constructed, Djikstra's algorithm is run on it. Assume use of a Fibonacci heap. With $n^4$ vertices and $O(n^4)$ edges, that adds an additional $O(n^4 log n^4 + n^4) = O(n^4 log n)$ because the log exponent is absorbed as a scalar. Assume in the worst case, decoding the path requires another $O(n^4)$ steps. This yields an asymptotic
+time complexity of $O(n^4 + n^4 log n + n^4)$, which simplifies to $O(n^4 log n)$.
+\end{quote}
 \end{enumerate}
 
 (Note: You may find the question above more accessible after the Monday (Feb. 5) lecture.)
