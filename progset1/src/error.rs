@@ -13,6 +13,7 @@ pub enum PsetErr {
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
+    #[cfg(test)]
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
 }

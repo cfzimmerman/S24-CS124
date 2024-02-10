@@ -2,8 +2,14 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 /// Tracks the weight of an entry in the heap. Because PrimHeap is a min heap,
 /// the lightest elements float to the top.
-#[derive(PartialEq, Eq, PartialOrd, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Debug, Copy, Clone, Default)]
 pub struct Weight<W>(W);
+
+impl<W> Weight<W> {
+    pub fn new(val: W) -> Weight<W> {
+        Weight(val)
+    }
+}
 
 /// A binary min heap specifically designed for use with
 /// Prim's algorithm or Dijkstra's algorithm.
@@ -278,8 +284,13 @@ where
 
 #[cfg(test)]
 mod heap_tests {
+    use std::collections::HashSet;
+
     use super::{PrimHeap, Weight};
-    use crate::{error::PsetRes, test_data::get_isize_arr};
+    use crate::{
+        error::PsetRes,
+        test_data::{get_isize_arr, get_weighted_nums},
+    };
 
     /// Weights integer heap entries by the entry's value itself. This equates to sorting
     /// a collection of unique integers.
@@ -348,6 +359,64 @@ mod heap_tests {
                     assert_eq!(val, &in_hmap.weight.0, "Weight shouldn't have been mutated");
                 }
             }
+        }
+
+        assert_eq!(heapify_heap.take_min(), None);
+        assert_eq!(insertion_heap.take_min(), None);
+        Ok(())
+    }
+
+    /// Builds test data from inputs with distinct f64 weights. Sorts input
+    /// data based on weight and ensures heaps yield minimum-weight unique
+    /// keys in ascending order.
+    #[test]
+    fn heapsort_by_weight() -> PsetRes<()> {
+        let mut weighted_nums = get_weighted_nums()?;
+
+        // Build one heap by repeated insertion
+        let mut insertion_heap = PrimHeap::new();
+        for (num, weight) in weighted_nums.iter() {
+            insertion_heap.upsert_min(num, *weight);
+        }
+        // Build another heap by heapify
+        let mut heapify_heap = PrimHeap::heapify(
+            weighted_nums
+                .iter()
+                .map(|(num, weight)| (num, *weight))
+                .collect(),
+        );
+
+        weighted_nums.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        let mut vals_seen: HashSet<i64> = HashSet::new();
+
+        for (num, _) in weighted_nums {
+            if vals_seen.contains(&num) {
+                continue;
+            }
+            // Verify correctness of peek. Implicitly tests heapify/upsert too because
+            // an incorrect ordering will cause these to fail.
+            assert_eq!(Some(&num), heapify_heap.peek(), "heapify_heap");
+            assert_eq!(Some(&num), insertion_heap.peek(), "insertion_heap");
+
+            // Verify correctness of take.
+            {
+                let heapify_val = heapify_heap
+                    .take_min()
+                    .expect("Heapify heap should have as many elements as array");
+                let insertion_val = insertion_heap
+                    .take_min()
+                    .expect("Insertion heap should have as many elements as array");
+                assert_eq!(
+                    num, heapify_val,
+                    "Nums and heapify heap should be sorted the same"
+                );
+                assert_eq!(
+                    num, insertion_val,
+                    "Nums and insertion heap should be sorted the same"
+                );
+            }
+
+            vals_seen.insert(num);
         }
 
         assert_eq!(heapify_heap.take_min(), None);
