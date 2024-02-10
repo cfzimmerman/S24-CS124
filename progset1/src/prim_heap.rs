@@ -16,20 +16,18 @@ pub struct Weight<W>(W);
 /// keys are cloned on insertion. For this reason, this data structure
 /// should only be used with data that implements Copy or is wrapped
 /// in a smart pointer like `Rc<RefCell>`.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct PrimHeap<T, W> {
     tvec: TwoWayVec<T, W>,
 }
 
 impl<T, W> PrimHeap<T, W>
 where
-    T: PartialEq + Eq + Hash + Clone + Debug,
-    W: PartialOrd + Debug,
+    T: PartialEq + Eq + Hash + Clone + Debug + Default,
+    W: PartialOrd + Debug + Default,
 {
     pub fn new() -> PrimHeap<T, W> {
-        PrimHeap {
-            tvec: TwoWayVec::new(),
-        }
+        PrimHeap::default()
     }
 
     /// Creates a new heap from lst in O(n) time
@@ -60,7 +58,7 @@ where
         if !self.tvec.is_empty() {
             self.bubble_down(0);
         }
-        return popped;
+        popped
     }
 
     /// If a value is not yet in the heap, inserts it. If it is in the heap and the
@@ -73,10 +71,6 @@ where
         if let Some(ind) = self.tvec.upsert_min(val, weight) {
             self.bubble_up(ind);
         };
-    }
-
-    pub fn len(&self) -> usize {
-        self.tvec.len()
     }
 
     fn parent_ind(ind: usize) -> usize {
@@ -150,7 +144,7 @@ where
 /// While value weights are tracked, methods called on this data type often break
 /// the heap invariant. It's the requirement of the caller to restore heap
 /// properties.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct TwoWayVec<T, W> {
     lst: Vec<T>,
     hmap: HashMap<T, VecMeta<W>>,
