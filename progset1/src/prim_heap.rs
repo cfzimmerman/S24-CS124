@@ -287,27 +287,8 @@ mod heap_tests {
     use super::{PrimHeap, Weight};
     use crate::{error::PsetRes, test_data::get_isize_arr};
 
-    /// Asserts the index held in hmap is equal to the index
-    /// of the actual element in the vector.
-    /// Assumes element weights also have not been changed.
-    fn assert_hmap_meta(heap: &PrimHeap<isize, isize>) {
-        assert_eq!(
-            heap.tvec.lst.len(),
-            heap.tvec.hmap.len(),
-            "Vec and hmap tracker should be the same size."
-        );
-        for (ind, val) in heap.tvec.lst.iter().enumerate() {
-            let in_hmap = heap.tvec.hmap.get(val).expect("Value should be in hmap");
-            assert_eq!(
-                &ind, &in_hmap.ind,
-                "Element index should equal element value in hmap"
-            );
-            assert_eq!(val, &in_hmap.weight.0, "Weight shouldn't have been mutated");
-        }
-    }
-
     #[test]
-    fn heapsort() -> PsetRes<()> {
+    fn heapsort_by_val() -> PsetRes<()> {
         let mut nums = get_isize_arr()?;
 
         let mut insertion_heap = PrimHeap::new();
@@ -346,8 +327,21 @@ mod heap_tests {
                 "Nums and insertion heap should be sorted the same"
             );
 
-            assert_hmap_meta(&heapify_heap);
-            assert_hmap_meta(&insertion_heap);
+            for heap in [&heapify_heap, &insertion_heap] {
+                assert_eq!(
+                    heap.tvec.lst.len(),
+                    heap.tvec.hmap.len(),
+                    "Vec and hmap tracker should be the same size."
+                );
+                for (ind, val) in heap.tvec.lst.iter().enumerate() {
+                    let in_hmap = heap.tvec.hmap.get(val).expect("Value should be in hmap");
+                    assert_eq!(
+                        &ind, &in_hmap.ind,
+                        "Element index should equal element value in hmap"
+                    );
+                    assert_eq!(val, &in_hmap.weight.0, "Weight shouldn't have been mutated");
+                }
+            }
         }
 
         Ok(())
