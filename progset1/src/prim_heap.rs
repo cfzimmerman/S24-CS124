@@ -287,17 +287,22 @@ mod heap_tests {
     use super::{PrimHeap, Weight};
     use crate::{error::PsetRes, test_data::get_isize_arr};
 
+    /// Weights integer heap entries by the entry's value itself. This equates to sorting
+    /// a collection of unique integers.
     #[test]
     fn heapsort_by_val() -> PsetRes<()> {
         let mut nums = get_isize_arr()?;
 
+        // Build one heap by repeated insertion
         let mut insertion_heap = PrimHeap::new();
         for num in nums.iter() {
             insertion_heap.upsert_min(num, Weight(*num));
         }
+        // Build another heap by heapify
         let mut heapify_heap =
             PrimHeap::heapify(nums.iter().map(|num| (num, Weight(*num))).collect());
 
+        // Process the input integers so they match what we expect from the heaps
         nums.sort();
         let mut unique_nums: Vec<isize> = Vec::with_capacity(nums.len());
         for num in nums {
@@ -310,23 +315,30 @@ mod heap_tests {
         }
 
         for arr_val in unique_nums {
+            // Verify correctness of peek. Implicitly tests heapify/upsert too because
+            // an incorrect ordering will cause these to fail.
             assert_eq!(Some(&arr_val), heapify_heap.peek());
             assert_eq!(Some(&arr_val), insertion_heap.peek());
-            let heapify_val = heapify_heap
-                .take_min()
-                .expect("Heapify heap should have as many elements as array");
-            let insertion_val = insertion_heap
-                .take_min()
-                .expect("Insertion heap should have as many elements as array");
-            assert_eq!(
-                arr_val, heapify_val,
-                "Nums and heapify heap should be sorted the same"
-            );
-            assert_eq!(
-                arr_val, insertion_val,
-                "Nums and insertion heap should be sorted the same"
-            );
 
+            // Verify correctness of take.
+            {
+                let heapify_val = heapify_heap
+                    .take_min()
+                    .expect("Heapify heap should have as many elements as array");
+                let insertion_val = insertion_heap
+                    .take_min()
+                    .expect("Insertion heap should have as many elements as array");
+                assert_eq!(
+                    arr_val, heapify_val,
+                    "Nums and heapify heap should be sorted the same"
+                );
+                assert_eq!(
+                    arr_val, insertion_val,
+                    "Nums and insertion heap should be sorted the same"
+                );
+            }
+
+            // Verify the metadata trackers for both heaps are always in a valid state.
             for heap in [&heapify_heap, &insertion_heap] {
                 assert_eq!(
                     heap.tvec.lst.len(),
@@ -344,6 +356,8 @@ mod heap_tests {
             }
         }
 
+        assert_eq!(heapify_heap.take_min(), None);
+        assert_eq!(insertion_heap.take_min(), None);
         Ok(())
     }
 }
