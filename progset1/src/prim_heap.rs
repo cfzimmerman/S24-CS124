@@ -1,48 +1,39 @@
-use std::{collections::HashMap, fmt::Debug, hash::Hash, ops::Index};
+use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
-pub trait Decr<K> {
-    /// Decreases self by amount
-    fn decr(&mut self, amt: K);
-}
-
-impl Decr<isize> for isize {
-    fn decr(&mut self, amt: isize) {
-        *self -= amt;
-    }
-}
+/// Tracks the weight of an entry in the heap. Because PrimHeap is a min heap,
+/// the lightest elements float to the top.
+#[derive(PartialEq, Eq, PartialOrd, Debug)]
+pub struct Weight<W>(W);
 
 /// A binary min heap specifically designed for use with
 /// Prim's algorithm or Dijkstra's algorithm.
 ///
 /// This heap stores underlying data in a vector and tracks the index
 /// of every element in separate HashMap. This enables O(1) lookup
-/// and O(log n) key decr.
+/// and O(log n) key decr. All values in the heap are unique.
 ///
 /// For safety, both the underlying vector and the hashmap must own keys, so
-/// keys are cloned frequently. For this reason, this data structure
+/// keys are cloned on insertion. For this reason, this data structure
 /// should only be used with data that implements Copy or is wrapped
 /// in a smart pointer like `Rc<RefCell>`.
-///
-/// If using an `Rc<RefCell>`, DO NOT modify the internal state of the
-/// value while it is in the heap. Doing so will break the heap invariant
-/// and make further use of the heap pointless.
 #[derive(Debug)]
-pub struct PrimHeap<T> {
-    tvec: TwoWayVec<T>,
+pub struct PrimHeap<T, W> {
+    tvec: TwoWayVec<T, W>,
 }
 
-impl<T> PrimHeap<T>
+impl<T, W> PrimHeap<T, W>
 where
-    T: PartialEq + Eq + PartialOrd + Hash + Clone + Debug,
+    T: PartialEq + Eq + Hash + Clone + Debug,
+    W: PartialOrd + Debug,
 {
-    pub fn new() -> PrimHeap<T> {
+    pub fn new() -> PrimHeap<T, W> {
         PrimHeap {
             tvec: TwoWayVec::new(),
         }
     }
 
     /// Creates a new heap from lst in O(n) time
-    pub fn heapify(lst: Vec<T>) -> PrimHeap<T> {
+    pub fn heapify(lst: Vec<(&T, Weight<W>)>) -> PrimHeap<T, W> {
         let mut heap = PrimHeap {
             tvec: TwoWayVec::init(lst),
         };
@@ -59,7 +50,7 @@ where
 
     /// Removes and returns the top element of the heap. None if the
     /// heap is empty.
-    pub fn pop(&mut self) -> Option<T> {
+    pub fn take_min(&mut self) -> Option<T> {
         if self.tvec.is_empty() {
             return None;
         }
@@ -72,10 +63,16 @@ where
         return popped;
     }
 
-    /// Adds a new value to the heap
-    pub fn push(&mut self, val: T) {
-        self.tvec.push(val);
-        self.bubble_up(self.tvec.len() - 1);
+    /// If a value is not yet in the heap, inserts it. If it is in the heap and the
+    /// new weight is lighter, updates the weight of the value. If the new weight is
+    /// heavier, does nothing.
+    ///
+    /// To avoid unnecessary allocations on valuers already in the heap, `val` is cloned
+    /// internaly only if it needs to be added to the heap.
+    pub fn upsert_min(&mut self, val: &T, weight: Weight<W>) {
+        if let Some(ind) = self.tvec.upsert_min(val, weight) {
+            self.bubble_up(ind);
+        };
     }
 
     pub fn len(&self) -> usize {
@@ -99,83 +96,102 @@ where
         if curr_ind == 0 {
             return;
         }
-        let curr = &self.tvec.index(curr_ind);
+        let curr_weight = self
+            .tvec
+            .get_weight_of_ind(curr_ind)
+            .expect("Curr ind should be well-defined in bubble up.");
         let parent_ind = Self::parent_ind(curr_ind);
-        let parent = &self.tvec.index(parent_ind);
-        if curr >= parent {
+        let parent_weight = self
+            .tvec
+            .get_weight_of_ind(parent_ind)
+            .expect("Parent ind should be well-defined in bubble up.");
+        if curr_weight >= parent_weight {
             return;
         }
         self.tvec.swap(curr_ind, parent_ind);
-        return self.bubble_up(parent_ind);
+        self.bubble_up(parent_ind)
     }
 
     /// Performs down-heapify on a value, respecting the min heap property
     fn bubble_down(&mut self, curr_ind: usize) {
-        let curr = self.tvec.index(curr_ind);
+        let curr_weight = self
+            .tvec
+            .get_weight_of_ind(curr_ind)
+            .expect("Curr ind should be well-defined in bubble down.");
         let l_ind = Self::left_child_ind(curr_ind);
         let r_ind = Self::right_child_ind(curr_ind);
-        let (min_child, min_child_ind) = match (self.tvec.get(l_ind), self.tvec.get(r_ind)) {
+        let (min_child_weight, min_child_ind) = match (
+            self.tvec.get_weight_of_ind(l_ind),
+            self.tvec.get_weight_of_ind(r_ind),
+        ) {
             (Some(l), Some(r)) if l <= r => (l, l_ind),
             (Some(_), Some(r)) => (r, r_ind),
             (Some(l), None) => (l, l_ind),
             (None, Some(r)) => (r, r_ind),
             (None, None) => return,
         };
-        if curr <= min_child {
+        if curr_weight <= min_child_weight {
             return;
         }
         self.tvec.swap(curr_ind, min_child_ind);
-        return self.bubble_down(min_child_ind);
+        self.bubble_down(min_child_ind)
     }
 }
-
-type IndMap<T> = HashMap<T, usize>;
 
 /// Wraps a vector and hashmap so that values can be looked up in O(1) time
 /// both by index and by value. This implies all values in the underlying vector
 /// are unique! This data type has the indexing properties of a vector but
 /// the uniqueness properties of a Set.
 ///
-/// It also shares the same warnings about cloning and interior mutablity as PrimHeap.
-///
 /// Unless stated otherwise, assume every method does the same as its
 /// counterpart from std::Vec except mutations are also reflected in the
 /// hashmap.
+///
+/// While value weights are tracked, methods called on this data type often break
+/// the heap invariant. It's the requirement of the caller to restore heap
+/// properties.
 #[derive(Debug)]
-struct TwoWayVec<T> {
+struct TwoWayVec<T, W> {
     lst: Vec<T>,
-    hmap: IndMap<T>,
+    hmap: HashMap<T, VecMeta<W>>,
+}
+
+#[derive(Debug)]
+struct VecMeta<W> {
+    ind: usize,
+    weight: Weight<W>,
 }
 
 // There are lots of assertions and `expect` lines in this data structure, but
-// all are to maintained externally guaranteed invariants. If something panics,
+// all are to guarantee invariants. If something panics,
 // that's a fundamental error beneath the API.
-impl<T> TwoWayVec<T>
+impl<T, W> TwoWayVec<T, W>
 where
     T: PartialEq + Eq + Hash + Clone,
+    W: PartialOrd + Debug,
 {
     /// Instantiates both an empty tracked array and its tracker map.
-    pub fn new() -> TwoWayVec<T> {
+    pub fn new() -> TwoWayVec<T, W> {
         TwoWayVec {
             lst: Vec::new(),
             hmap: HashMap::new(),
         }
     }
 
-    /// Builds a new HashTrackedArr from an existing Vector.
-    /// If values in the input list are duplicate, only the first value
-    /// is added to the returned data structure. Others are discarded.
-    pub fn init(lst: Vec<T>) -> Self {
+    /// Builds a new TwoWayVec from an existing Vector.
+    /// If input values are duplicate, the lowest weight is chosen.
+    pub fn init(lst: Vec<(&T, Weight<W>)>) -> Self {
         let mut rvec = TwoWayVec::new();
         rvec.lst.reserve(lst.len());
         rvec.hmap.reserve(lst.len());
-        for el in lst {
-            rvec.push(el);
+        for (el, weight) in lst {
+            rvec.upsert_min(el, weight);
         }
         rvec
     }
 
     pub fn len(&self) -> usize {
+        debug_assert!(self.lst.len() == self.hmap.len());
         self.lst.len()
     }
 
@@ -183,41 +199,70 @@ where
         self.lst.get(ind)
     }
 
-    pub fn index(&self, ind: usize) -> &T {
-        self.lst.index(ind)
-    }
-
     pub fn is_empty(&self) -> bool {
         self.lst.is_empty()
     }
 
+    /*
     /// Not a vector method:
     /// Uses the hashmap to retrieve the index of a key. Returns
     /// None if the key could not be found.
     pub fn get_index(&self, el: &T) -> Option<&usize> {
-        self.hmap.get(el)
+        self.hmap.get(el).map(|entry| &entry.ind)
     }
 
-    /// Pushing a value already in the vec will yield None, and
-    /// the redundant value will not be inserted.
-    pub fn push(&mut self, el: T) -> Option<()> {
-        if self.hmap.contains_key(&el) {
-            return None;
+    /// Uses the hashmap to retrieve the weight of a key. Returns
+    /// None if the key could not be found.
+    pub fn get_weight(&self, el: &T) -> Option<&Weight<W>> {
+        self.hmap.get(el).map(|entry| &entry.weight)
+    }
+    */
+
+    /// Uses the hashmap to retrieve the weight of the key stored
+    /// at the given index. Returns None if the given index is
+    /// out of bounds.
+    pub fn get_weight_of_ind(&self, ind: usize) -> Option<&Weight<W>> {
+        let el = match self.lst.get(ind) {
+            Some(e) => e,
+            None => return None,
+        };
+        let meta = &self
+            .hmap
+            .get(el)
+            .expect("Every element in the array should be tracked in the hmap.");
+        Some(&meta.weight)
+    }
+
+    /// (update/insert) Adds a value with weight to the vec. If the same value with lesser weight
+    /// already exists, the value is overwritten with the lighter weight. The index
+    /// of the upserted value is returned.
+    /// `el` is cloned twice if the value is not yet tracked.
+    pub fn upsert_min(&mut self, el: &T, weight: Weight<W>) -> Option<usize> {
+        if let Some(entry) = self.hmap.get_mut(el) {
+            if entry.weight <= weight {
+                return None;
+            }
+            entry.weight = weight;
+            return Some(entry.ind);
         }
         self.lst.push(el.clone());
-        self.hmap.insert(el, self.lst.len() - 1);
-        Some(())
+        let new_meta = VecMeta {
+            ind: self.lst.len() - 1,
+            weight,
+        };
+        self.hmap.insert(el.clone(), new_meta);
+        Some(self.lst.len() - 1)
     }
 
     pub fn pop(&mut self) -> Option<T> {
         let popped = self.lst.pop();
         if let Some(el) = &popped {
-            let popped_ind = self
+            let popped_meta = self
                 .hmap
                 .remove(el)
                 .expect("Index of el should have been tracked");
-            assert_eq!(
-                popped_ind,
+            debug_assert_eq!(
+                popped_meta.ind,
                 self.lst.len(),
                 "Popped index should have matched map"
             );
@@ -232,19 +277,20 @@ where
                 .hmap
                 .get_mut(&self.lst[ind])
                 .expect("Index of prev should have been tracked");
-            *prev = ind;
+            prev.ind = ind;
         }
     }
 }
 
 #[cfg(test)]
 mod heap_tests {
-    use super::PrimHeap;
+    use super::{PrimHeap, Weight};
     use crate::{error::PsetRes, test_data::get_isize_arr};
 
     /// Asserts the index held in hmap is equal to the index
     /// of the actual element in the vector.
-    fn assert_hmap_inds(heap: &PrimHeap<isize>) {
+    /// Assumes element weights also have not been changed.
+    fn assert_hmap_meta(heap: &PrimHeap<isize, isize>) {
         assert_eq!(
             heap.tvec.lst.len(),
             heap.tvec.hmap.len(),
@@ -253,9 +299,10 @@ mod heap_tests {
         for (ind, val) in heap.tvec.lst.iter().enumerate() {
             let in_hmap = heap.tvec.hmap.get(val).expect("Value should be in hmap");
             assert_eq!(
-                &ind, in_hmap,
+                &ind, &in_hmap.ind,
                 "Element index should equal element value in hmap"
             );
+            assert_eq!(val, &in_hmap.weight.0, "Weight shouldn't have been mutated");
         }
     }
 
@@ -264,10 +311,11 @@ mod heap_tests {
         let mut nums = get_isize_arr()?;
 
         let mut insertion_heap = PrimHeap::new();
-        for num in nums.iter().copied() {
-            insertion_heap.push(num);
+        for num in nums.iter() {
+            insertion_heap.upsert_min(num, Weight(*num));
         }
-        let mut heapify_heap = PrimHeap::heapify(nums.clone());
+        let mut heapify_heap =
+            PrimHeap::heapify(nums.iter().map(|num| (num, Weight(*num))).collect());
 
         nums.sort();
         let mut unique_nums: Vec<isize> = Vec::with_capacity(nums.len());
@@ -281,11 +329,13 @@ mod heap_tests {
         }
 
         for arr_val in unique_nums {
+            assert_eq!(Some(&arr_val), heapify_heap.peek());
+            assert_eq!(Some(&arr_val), insertion_heap.peek());
             let heapify_val = heapify_heap
-                .pop()
+                .take_min()
                 .expect("Heapify heap should have as many elements as array");
             let insertion_val = insertion_heap
-                .pop()
+                .take_min()
                 .expect("Insertion heap should have as many elements as array");
             assert_eq!(
                 arr_val, heapify_val,
@@ -296,8 +346,8 @@ mod heap_tests {
                 "Nums and insertion heap should be sorted the same"
             );
 
-            assert_hmap_inds(&heapify_heap);
-            assert_hmap_inds(&insertion_heap);
+            assert_hmap_meta(&heapify_heap);
+            assert_hmap_meta(&insertion_heap);
         }
 
         Ok(())
