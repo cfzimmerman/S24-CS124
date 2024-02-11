@@ -5,7 +5,10 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash};
 #[derive(PartialEq, Eq, PartialOrd, Debug, Copy, Clone, Default)]
 pub struct Weight<W>(W);
 
-impl<W> Weight<W> {
+impl<W> Weight<W>
+where
+    W: Copy,
+{
     pub fn new(val: W) -> Weight<W> {
         Weight(val)
     }
@@ -24,14 +27,17 @@ impl From<f64> for Weight<f64> {
 /// A binary min heap specifically designed for use with
 /// Prim's algorithm or Dijkstra's algorithm.
 ///
-/// This heap stores underlying data in a vector and tracks the index
-/// of every element in separate HashMap. This enables O(1) lookup
-/// and O(log n) key decr. All values in the heap are unique.
-///
 /// For safety, both the underlying vector and the hashmap must own keys, so
 /// keys are cloned on insertion. For this reason, this data structure
 /// should only be used with data that implements Copy or is wrapped
-/// in a smart pointer like `Rc<RefCell>`.
+/// in a smart pointer like `Rc<T>`.
+///
+/// At the cost of requiring entry weights and relying on the added allocations
+/// mentioned above, this heap offers the following characteristics:
+/// - O(log n) upsert_min
+/// - O(log n) take_min
+/// - O(1) attribute retrieval
+/// - O(1) peelkl
 #[derive(Debug, Default)]
 pub struct PrimHeap<T, W> {
     tvec: TwoWayVec<T, W>,

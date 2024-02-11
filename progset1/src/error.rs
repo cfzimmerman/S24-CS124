@@ -2,6 +2,7 @@ use thiserror::Error;
 
 pub type PsetRes<T> = Result<T, PsetErr>;
 
+/// Common error type for Progset 1 errors.
 #[derive(Debug, Error)]
 pub enum PsetErr {
     #[error("Static: {0}")]
