@@ -9,8 +9,15 @@ const PREC_POW10: i32 = 12;
 pub struct Decimal(i64);
 
 impl Decimal {
+    /// Instantiates a new decimal value using the default decimal precision.
     pub fn new(num: f64) -> Self {
         Decimal((num * 10f64.powi(PREC_POW10)) as i64)
+    }
+
+    /// Instantiates a new decimal value using custom decimal precision.
+    /// A value less than or equal to 12 is recommended.
+    pub fn new_custom(num: f64, num_decimals: i32) -> Self {
+        Decimal((num * 10f64.powi(num_decimals)) as i64)
     }
 
     pub fn get(&self) -> f64 {

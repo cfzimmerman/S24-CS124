@@ -106,7 +106,9 @@ where
 mod mst_tests {
     use crate::{
         decimal::Decimal,
-        graph_gen::{CompleteUnitGraph, Graph, Vertex2D, Vertex3D, Vertex4D},
+        graph_gen::{
+            CompleteUnitGraph, Graph, Vertex1D, Vertex2D, Vertex3D, Vertex4D, WeightedEdge,
+        },
     };
 
     use super::{Mst, Prev};
@@ -174,16 +176,19 @@ mod mst_tests {
     {
         let benchmark_start = graph.keys().next().expect("The graph shouldn't be empty");
         let benchmark_mst = Mst::from_prim(&graph, &benchmark_start);
-        let expected_weight = Decimal::new(benchmark_mst.weight);
+        // Use lower-precision decimals to prevent minor float differences from
+        // crashing tests.
+        let decimal_precision = 8;
+        let expected_weight = Decimal::new_custom(benchmark_mst.weight, decimal_precision);
 
         for start in graph.keys() {
             let mst = Mst::from_prim(&graph, &start);
             let mst_adj = adj_graph_from_prevs(&mst.prevs);
             assert_no_cycles(&mst_adj, start, &mut HashSet::new());
-            let this_weight = Decimal::new(mst.weight);
+            let this_weight = Decimal::new_custom(mst.weight, decimal_precision);
             assert_eq!(
                 this_weight,
-                Decimal::new(weight_of_prev(&mst.prevs)),
+                Decimal::new_custom(weight_of_prev(&mst.prevs), decimal_precision),
                 "Returned weight should be the same as the weight of Prevs."
             );
             assert_eq!(
@@ -215,5 +220,182 @@ mod mst_tests {
     fn mst_4d_graph() {
         let graph = CompleteUnitGraph::graph_nd::<Vertex4D>(NUM_VERTICES);
         assert_mst(&graph);
+    }
+
+    /// Verify MST calculation is correct by comparing it to a known MST. The graph here
+    /// corresponds with the example in CLRS 21.2.
+    #[test]
+    fn mst_known_graph() {
+        let clrs_graph = create_clrs_graph();
+        for start in clrs_graph.keys() {
+            let res = Mst::from_prim(&clrs_graph, start);
+            assert_eq!(res.weight as i64, 37, "Mst weight should equal CLRS");
+        }
+    }
+
+    /// In a sequence indexed as ['a', 'b', 'c'], etc. beginning
+    /// at 'a', returns the 0-indexed index of that character in an
+    /// actual array. This function is really only useful to `create_clrs_graph`.
+    fn char_ind(ch: char) -> usize {
+        ch as usize - 'a' as usize
+    }
+
+    /// Generate the example graph exactly matching the one in CLRS Ch 21.2
+    fn create_clrs_graph() -> Graph<Vertex1D> {
+        let mut graph: Graph<Vertex1D> = HashMap::new();
+
+        // Add vertices
+        let mut vertices: Vec<Rc<Vertex1D>> = Vec::new();
+        for id in ('a' as usize)..=('i' as usize) {
+            let vertex = Rc::new(Vertex1D {
+                id: Decimal::new(id as f64),
+            });
+            vertices.push(vertex.clone());
+            graph.insert(vertex, HashSet::new());
+        }
+
+        // Add all edges. The hard-coding is undesirable, but this ensures we have
+        // exactly the CLRS graph.
+        for vertex in vertices.iter() {
+            let mut edges = vec![];
+            match vertex.id.get() as u8 as char {
+                'a' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('b')].clone(),
+                        weight: 4f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('h')].clone(),
+                        weight: 8f64.into(),
+                    })
+                }
+                'b' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('a')].clone(),
+                        weight: 4f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('c')].clone(),
+                        weight: 8f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('h')].clone(),
+                        weight: 11f64.into(),
+                    });
+                }
+                'c' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('b')].clone(),
+                        weight: 8f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('d')].clone(),
+                        weight: 7f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('f')].clone(),
+                        weight: 4f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('i')].clone(),
+                        weight: 2f64.into(),
+                    });
+                }
+                'd' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('c')].clone(),
+                        weight: 7f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('e')].clone(),
+                        weight: 9f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('f')].clone(),
+                        weight: 14f64.into(),
+                    });
+                }
+                'e' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('d')].clone(),
+                        weight: 9f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('f')].clone(),
+                        weight: 10f64.into(),
+                    });
+                }
+                'f' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('c')].clone(),
+                        weight: 4f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('d')].clone(),
+                        weight: 14f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('e')].clone(),
+                        weight: 10f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('g')].clone(),
+                        weight: 2f64.into(),
+                    });
+                }
+                'g' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('f')].clone(),
+                        weight: 2f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('h')].clone(),
+                        weight: 1f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('i')].clone(),
+                        weight: 6f64.into(),
+                    });
+                }
+                'h' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('a')].clone(),
+                        weight: 8f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('b')].clone(),
+                        weight: 11f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('g')].clone(),
+                        weight: 1f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('i')].clone(),
+                        weight: 7f64.into(),
+                    });
+                }
+                'i' => {
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('c')].clone(),
+                        weight: 2f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('g')].clone(),
+                        weight: 6f64.into(),
+                    });
+                    edges.push(WeightedEdge {
+                        vertex: vertices[char_ind('h')].clone(),
+                        weight: 7f64.into(),
+                    });
+                }
+                _ => panic!("Unexpected vertex id"),
+            }
+            graph
+                .get_mut(vertex)
+                .expect("Every vertex should be in the graph")
+                .extend(edges.into_iter());
+        }
+        graph
     }
 }

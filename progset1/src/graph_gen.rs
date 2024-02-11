@@ -27,28 +27,28 @@ pub struct WeightedEdge<T> {
 
 #[derive(Debug, PartialEq, Eq, Hash, Default)]
 pub struct Vertex1D {
-    id: Decimal,
+    pub id: Decimal,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Default)]
 pub struct Vertex2D {
-    x: Decimal,
-    y: Decimal,
+    pub x: Decimal,
+    pub y: Decimal,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Default)]
 pub struct Vertex3D {
-    x: Decimal,
-    y: Decimal,
-    z: Decimal,
+    pub x: Decimal,
+    pub y: Decimal,
+    pub z: Decimal,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Default)]
 pub struct Vertex4D {
-    r: Decimal,
-    g: Decimal,
-    b: Decimal,
-    a: Decimal,
+    pub r: Decimal,
+    pub g: Decimal,
+    pub b: Decimal,
+    pub a: Decimal,
 }
 
 pub type Edges<V> = HashSet<WeightedEdge<V>>;
