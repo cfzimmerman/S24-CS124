@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Sub};
 
 // The number of digits of float precision to preserve.
 const PREC_POW10: i32 = 12;
@@ -18,11 +18,25 @@ impl Decimal {
     }
 }
 
+impl From<f64> for Decimal {
+    fn from(value: f64) -> Self {
+        Decimal::new(value)
+    }
+}
+
 impl Add for &Decimal {
     type Output = Decimal;
 
     fn add(self, rhs: Self) -> Self::Output {
         Decimal::new(self.get() + rhs.get())
+    }
+}
+
+impl Sub for &Decimal {
+    type Output = Decimal;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Decimal::new(self.get() - rhs.get())
     }
 }
 
@@ -49,5 +63,7 @@ mod decimal_tests {
         let nt_prod = &nt1 * &Decimal::new(2.0);
         assert_eq!(no_trunc + no_trunc, nt_sum.get(), "addition");
         assert_eq!(nt_sum, nt_prod, "multiplication");
+        let nt_sub = &nt_sum - &nt2;
+        assert_eq!(nt_sub, nt1, "subtraction");
     }
 }

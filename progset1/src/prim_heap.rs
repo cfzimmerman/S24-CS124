@@ -11,6 +11,12 @@ impl<W> Weight<W> {
     }
 }
 
+impl From<f64> for Weight<f64> {
+    fn from(value: f64) -> Self {
+        Weight(value)
+    }
+}
+
 /// A binary min heap specifically designed for use with
 /// Prim's algorithm or Dijkstra's algorithm.
 ///
