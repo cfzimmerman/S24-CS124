@@ -95,7 +95,6 @@ impl CompleteUnitGraph {
                 graph.insert(v_from.clone(), [new_edge].into());
             }
         }
-
         graph
     }
 
@@ -106,6 +105,7 @@ impl CompleteUnitGraph {
     where
         V: VertexCoord<V> + PartialEq + Eq + Hash,
     {
+        let mut graph: Graph<V> = HashMap::new();
         let mut vertices = HashSet::new();
         let mut rng = thread_rng();
 
@@ -119,7 +119,7 @@ impl CompleteUnitGraph {
             vertices.insert(Rc::new(V::new_rand(&mut rng)));
         }
 
-        let mut graph: Graph<V> = HashMap::new();
+        // Add edges
         for v_from in vertices.iter() {
             for v_to in vertices.iter() {
                 if v_from == v_to {
@@ -147,8 +147,8 @@ impl CompleteUnitGraph {
     /// Even for n-dimensional graphs, this is helpful to avoid float
     /// imprecision when recalculating distance.
     ///
-    /// The old_to, old_from naming implies that the caller is now suggesting
-    /// an edge from old_to to old_from.
+    /// The (old_to, old_from) naming implies that the caller is now suggesting
+    /// an edge in the other direction where old_to == new_from and old_from == new_to.
     fn get_existing_weight<V>(
         graph: &mut Graph<V>,
         old_to: &Rc<V>,
@@ -299,17 +299,21 @@ mod graph_tests {
             for edge in edges.iter() {
                 let other_side_weight = &graph
                     .get(&edge.vertex)
-                    .expect("Referenced other vertex should be in the graph")
+                    .expect("Other vertex should be in the graph")
                     .get(&WeightedEdge {
                         vertex: vertex.clone(),
                         // Again, equality only looks at the vertex.
                         weight: Weight::new(-1.),
                     })
-                    .expect("The other vertex should have an edge pointing to curr vertex")
+                    .expect("Other vertex should have an edge pointing to curr vertex")
                     .weight;
                 // While comparing floats is flakey, graph generation should ensure they're
                 // identical.
                 assert_eq!(&edge.weight, other_side_weight);
+                assert!(
+                    edge.weight >= Weight::new(0.),
+                    "No negative-weight edges should remain"
+                );
             }
         }
     }
