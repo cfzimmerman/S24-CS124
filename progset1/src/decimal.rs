@@ -5,7 +5,7 @@ const PREC_POW10: i32 = 12;
 
 /// Holds values of float precision in integer form. This makes
 /// Decimal compatible with types requiring Eq and Hash.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, Default)]
 pub struct Decimal(i64);
 
 impl Decimal {

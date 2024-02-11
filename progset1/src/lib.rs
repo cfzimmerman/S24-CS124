@@ -1,6 +1,7 @@
 mod decimal;
-mod error;
-mod graph_gen;
+pub mod error;
+pub mod graph_gen;
+pub mod mst;
 mod prim_heap;
 
 #[cfg(test)]

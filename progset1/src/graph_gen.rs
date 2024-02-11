@@ -21,29 +21,29 @@ where
 
 #[derive(Debug)]
 pub struct WeightedEdge<T> {
-    vertex: T,
-    weight: Weight<f64>,
+    pub vertex: T,
+    pub weight: Weight<f64>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Default)]
 pub struct Vertex1D {
     id: Decimal,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Default)]
 pub struct Vertex2D {
     x: Decimal,
     y: Decimal,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Default)]
 pub struct Vertex3D {
     x: Decimal,
     y: Decimal,
     z: Decimal,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Default)]
 pub struct Vertex4D {
     r: Decimal,
     g: Decimal,
@@ -82,7 +82,7 @@ impl CompleteUnitGraph {
                     continue;
                 }
                 // Ensure both sides of an edge have the same weight
-                let weight = Self::get_existing_weight(&mut graph, &v_from, &v_to)
+                let weight = Self::get_existing_weight(&mut graph, v_from, v_to)
                     .unwrap_or_else(|| rng.gen::<f64>().into());
                 let new_edge = WeightedEdge {
                     vertex: v_to.clone(),
@@ -125,7 +125,7 @@ impl CompleteUnitGraph {
                 if v_from == v_to {
                     continue;
                 }
-                let weight = Self::get_existing_weight(&mut graph, &v_from, &v_to)
+                let weight = Self::get_existing_weight(&mut graph, v_from, v_to)
                     .unwrap_or_else(|| v_from.dist(v_to).into());
                 let new_edge = WeightedEdge {
                     vertex: v_to.clone(),

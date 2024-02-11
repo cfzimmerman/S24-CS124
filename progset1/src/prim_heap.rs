@@ -9,6 +9,10 @@ impl<W> Weight<W> {
     pub fn new(val: W) -> Weight<W> {
         Weight(val)
     }
+
+    pub fn get(&self) -> &W {
+        &self.0
+    }
 }
 
 impl From<f64> for Weight<f64> {
@@ -38,6 +42,7 @@ where
     T: PartialEq + Eq + Hash + Clone + Debug + Default,
     W: PartialOrd + Debug + Default,
 {
+    #[cfg(test)]
     pub fn new() -> PrimHeap<T, W> {
         PrimHeap::default()
     }
@@ -54,13 +59,14 @@ where
     }
 
     /// Returns the top element of the heap.
+    #[cfg(test)]
     pub fn peek(&self) -> Option<&T> {
         self.tvec.get(0)
     }
 
     /// Removes and returns the top element of the heap. None if the
     /// heap is empty.
-    pub fn take_min(&mut self) -> Option<T> {
+    pub fn take_min(&mut self) -> Option<(T, Weight<W>)> {
         if self.tvec.is_empty() {
             return None;
         }
@@ -71,6 +77,12 @@ where
             self.bubble_down(0);
         }
         popped
+    }
+
+    /// Returns the weight of a value in the heap or None if the
+    /// vertex isn't currently in the heap.
+    pub fn get_weight(&self, val: &T) -> Option<&Weight<W>> {
+        self.tvec.get_weight(val)
     }
 
     /// If a value is not yet in the heap, inserts it. If it is in the heap and the
@@ -201,6 +213,7 @@ where
         self.lst.len()
     }
 
+    #[cfg(test)]
     pub fn get(&self, ind: usize) -> Option<&T> {
         self.lst.get(ind)
     }
@@ -216,13 +229,13 @@ where
     pub fn get_index(&self, el: &T) -> Option<&usize> {
         self.hmap.get(el).map(|entry| &entry.ind)
     }
+    */
 
     /// Uses the hashmap to retrieve the weight of a key. Returns
     /// None if the key could not be found.
     pub fn get_weight(&self, el: &T) -> Option<&Weight<W>> {
         self.hmap.get(el).map(|entry| &entry.weight)
     }
-    */
 
     /// Uses the hashmap to retrieve the weight of the key stored
     /// at the given index. Returns None if the given index is
@@ -260,20 +273,21 @@ where
         Some(self.lst.len() - 1)
     }
 
-    pub fn pop(&mut self) -> Option<T> {
-        let popped = self.lst.pop();
-        if let Some(el) = &popped {
-            let popped_meta = self
-                .hmap
-                .remove(el)
-                .expect("Index of el should have been tracked");
-            debug_assert_eq!(
-                popped_meta.ind,
-                self.lst.len(),
-                "Popped index should have matched map"
-            );
-        }
-        popped
+    pub fn pop(&mut self) -> Option<(T, Weight<W>)> {
+        let popped = match self.lst.pop() {
+            None => return None,
+            Some(el) => el,
+        };
+        let popped_meta = self
+            .hmap
+            .remove(&popped)
+            .expect("Index of el should have been tracked");
+        debug_assert_eq!(
+            popped_meta.ind,
+            self.lst.len(),
+            "Popped index should have matched map"
+        );
+        Some((popped, popped_meta.weight))
     }
 
     pub fn swap(&mut self, ind1: usize, ind2: usize) {
@@ -340,11 +354,11 @@ mod heap_tests {
                     .take_min()
                     .expect("Insertion heap should have as many elements as array");
                 assert_eq!(
-                    arr_val, heapify_val,
+                    arr_val, heapify_val.0,
                     "Nums and heapify heap should be sorted the same"
                 );
                 assert_eq!(
-                    arr_val, insertion_val,
+                    arr_val, insertion_val.0,
                     "Nums and insertion heap should be sorted the same"
                 );
             }
@@ -413,11 +427,11 @@ mod heap_tests {
                     .take_min()
                     .expect("Insertion heap should have as many elements as array");
                 assert_eq!(
-                    num, heapify_val,
+                    num, heapify_val.0,
                     "Nums and heapify heap should be sorted the same"
                 );
                 assert_eq!(
-                    num, insertion_val,
+                    num, insertion_val.0,
                     "Nums and insertion heap should be sorted the same"
                 );
             }
