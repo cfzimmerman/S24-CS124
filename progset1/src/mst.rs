@@ -170,7 +170,7 @@ mod mst_tests {
     /// Given a graph, generates an MST starting at each vertex in the
     /// graph verifying that all output the same weight. The output graph
     /// is also searched to verify that it's a tree.
-    fn assert_mst<V>(graph: &Graph<V>)
+    fn assert_mst<V>(graph: &Graph<V>) -> Decimal
     where
         V: PartialEq + Eq + Hash + Debug + Default,
     {
@@ -196,6 +196,7 @@ mod mst_tests {
                 "Minimum weight should not be different no matter where we start"
             );
         }
+        expected_weight
     }
 
     #[test]

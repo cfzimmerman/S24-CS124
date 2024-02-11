@@ -14,6 +14,9 @@ pub enum PsetErr {
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
+    #[error(transparent)]
+    ParseInt(#[from] std::num::ParseIntError),
+
     #[cfg(test)]
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
