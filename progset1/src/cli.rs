@@ -10,7 +10,7 @@ use std::{
 /// The various graph dimensions this program supports.
 #[derive(Debug)]
 pub enum GraphDim {
-    OneD,
+    ZeroD,
     TwoD,
     ThreeD,
     FourD,
@@ -148,12 +148,12 @@ impl TryFrom<&usize> for GraphDim {
     type Error = PsetErr;
     fn try_from(value: &usize) -> Result<Self, Self::Error> {
         match value {
-            1 => Ok(Self::OneD),
+            0 => Ok(Self::ZeroD),
             2 => Ok(Self::TwoD),
             3 => Ok(Self::ThreeD),
             4 => Ok(Self::FourD),
             _ => Err(PsetErr::Cxt(format!(
-                "{} does not correspond to a supported graph dimension: 1, 2, 3, 4.",
+                "{} does not correspond to a supported graph dimension: 0, 2, 3, 4.",
                 value
             ))),
         }

@@ -2,7 +2,7 @@ use csv::Writer;
 use progset1::{
     cli::{CliCommand, CollectStatsArgs, CollectedStat, GraphDim},
     error::PsetRes,
-    graph_gen::{CompleteUnitGraph, Graph, Vertex2D, Vertex3D, Vertex4D},
+    graph_gen::{CompleteUnitGraph, Graph, Vertex0D, Vertex2D, Vertex3D, Vertex4D},
     mst::Mst,
 };
 use std::{
@@ -17,9 +17,11 @@ fn mst_average(num_trials: usize, num_vertices: usize, dimension: &GraphDim) -> 
     let mut total_time = Duration::ZERO;
     for trial in 0..num_trials {
         let timer = Instant::now();
+        // These cases are no fun, but I'd rather this than the performance hit of boxing and
+        // dynamic dispatch on trait objects.
         match &dimension {
-            GraphDim::OneD => {
-                let graph = CompleteUnitGraph::graph_1d(num_vertices);
+            GraphDim::ZeroD => {
+                let graph: Graph<Vertex0D> = CompleteUnitGraph::graph_nd(num_vertices);
                 if let Some(start) = graph.keys().next() {
                     let mst = Mst::from_prim(&graph, start);
                     total_weight += mst.weight;

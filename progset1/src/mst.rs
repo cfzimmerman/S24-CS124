@@ -107,7 +107,7 @@ mod mst_tests {
     use crate::{
         decimal::Decimal,
         graph_gen::{
-            CompleteUnitGraph, Graph, Vertex1D, Vertex2D, Vertex3D, Vertex4D, WeightedEdge,
+            CompleteUnitGraph, Graph, Vertex0D, Vertex2D, Vertex3D, Vertex4D, WeightedEdge,
         },
     };
 
@@ -200,8 +200,8 @@ mod mst_tests {
     }
 
     #[test]
-    fn mst_1d_graph() {
-        let graph = CompleteUnitGraph::graph_1d(NUM_VERTICES);
+    fn mst_0d_graph() {
+        let graph = CompleteUnitGraph::graph_nd::<Vertex0D>(NUM_VERTICES);
         assert_mst(&graph);
     }
 
@@ -242,13 +242,13 @@ mod mst_tests {
     }
 
     /// Generate the example graph exactly matching the one in CLRS Ch 21.2
-    fn create_clrs_graph() -> Graph<Vertex1D> {
-        let mut graph: Graph<Vertex1D> = HashMap::new();
+    fn create_clrs_graph() -> Graph<Vertex0D> {
+        let mut graph: Graph<Vertex0D> = HashMap::new();
 
         // Add vertices
-        let mut vertices: Vec<Rc<Vertex1D>> = Vec::new();
+        let mut vertices: Vec<Rc<Vertex0D>> = Vec::new();
         for id in ('a' as usize)..=('i' as usize) {
-            let vertex = Rc::new(Vertex1D {
+            let vertex = Rc::new(Vertex0D {
                 id: Decimal::new(id as f64),
             });
             vertices.push(vertex.clone());

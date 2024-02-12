@@ -1,10 +1,6 @@
 use crate::{decimal::Decimal, prim_heap::Weight};
 use rand::{rngs::ThreadRng, thread_rng, Rng};
-use std::{
-    collections::{HashMap, HashSet},
-    hash::Hash,
-    rc::Rc,
-};
+use std::{collections::HashMap, hash::Hash, rc::Rc};
 
 /// Required behaviors for vertices on randomly-generated
 /// n-dimensional graphs.
@@ -13,7 +9,8 @@ where
     T: PartialEq + Eq + Hash,
 {
     /// How far apart two coordinates are in an n-dimensional space.
-    fn dist(&self, other: &T) -> f64;
+    /// The ThreadRng is an ugly addition for the zero dimension case
+    fn dist(&self, other: &T, rng: &mut ThreadRng) -> f64;
 
     /// Generates a new coordinate at a random location.
     fn new_rand(rng: &mut ThreadRng) -> T;
@@ -26,7 +23,7 @@ pub struct WeightedEdge<T> {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Default)]
-pub struct Vertex1D {
+pub struct Vertex0D {
     pub id: Decimal,
 }
 
@@ -59,27 +56,36 @@ pub type Graph<V> = HashMap<Rc<V>, Edges<Rc<V>>>;
 pub struct CompleteUnitGraph();
 
 impl CompleteUnitGraph {
-    /// Generates a complete graph of `num_vertices` with ids
-    /// from 0 to `num_vertices - 1`.
-    pub fn graph_1d(num_vertices: usize) -> Graph<Vertex1D> {
-        let mut graph: Graph<Vertex1D> = HashMap::with_capacity(num_vertices);
+    /// Generates a complete n dimensional graph where each coordinate is generated
+    /// by calling T::new_rand and edge distances are the distance between
+    /// points.
+    pub fn graph_nd<V>(num_vertices: usize) -> Graph<V>
+    where
+        V: VertexCoord<V> + PartialEq + Eq + Hash,
+    {
+        let mut graph: Graph<V> = HashMap::new();
         let mut rng = thread_rng();
 
-        // Generate the vertices
-        let mut vertices: Vec<Rc<Vertex1D>> = Vec::with_capacity(num_vertices);
-        for id in 0..num_vertices {
-            let vertex = Rc::new(Vertex1D {
-                id: Decimal::new(id as f64),
-            });
+        // Generate all vertices. We may produce slightly fewer than num_vertices due to
+        // random generation, but the odds of frequent collisions are very small.
+        let mut vertices = Vec::with_capacity(num_vertices);
+        for _ in 0..num_vertices {
+            let vertex = Rc::new(V::new_rand(&mut rng));
             vertices.push(vertex.clone());
-            graph.insert(vertex, Vec::with_capacity(num_vertices));
+            if graph
+                .insert(vertex, Vec::with_capacity(num_vertices))
+                .is_some()
+            {
+                eprintln!("graph_nd generated a duplicate vertex");
+                continue;
+            };
         }
 
-        // Add edges so that it's a complete graph.
+        // Add edges
         for (v1_ind, v1) in vertices.iter().enumerate() {
             let mut v1_edges = Vec::with_capacity(vertices.len());
             for v2 in vertices.iter().skip(v1_ind + 1) {
-                let weight = rng.gen::<f64>().into();
+                let weight = v1.dist(&v2, &mut rng).into();
                 v1_edges.push(WeightedEdge {
                     vertex: v2.clone(),
                     weight,
@@ -96,48 +102,6 @@ impl CompleteUnitGraph {
                 .get_mut(v1)
                 .expect("v1 should have aready been added to the graph")
                 .extend(v1_edges.into_iter());
-        }
-        graph
-    }
-
-    /// Generates a complete n dimensional graph where each coordinate is generated
-    /// by calling T::new_rand and edge distances are the distance between
-    /// points.
-    pub fn graph_nd<V>(num_vertices: usize) -> Graph<V>
-    where
-        V: VertexCoord<V> + PartialEq + Eq + Hash,
-    {
-        let mut graph: Graph<V> = HashMap::new();
-        // When making this a vec, have an intermediate hash to ensure uniqueness
-        let mut vertices = HashSet::new();
-        let mut rng = thread_rng();
-
-        // Generate all vertices. Because of vertex random generation, we may
-        // need to retry if duplicates are created. However, limit that to at
-        // most 4x tries total to prevent an infinite loop somehow.
-        for _ in 0..(num_vertices * 4) {
-            if num_vertices <= vertices.len() {
-                break;
-            }
-            vertices.insert(Rc::new(V::new_rand(&mut rng)));
-        }
-
-        // Add edges
-        for v_from in vertices.iter() {
-            for v_to in vertices.iter() {
-                if v_from == v_to {
-                    continue;
-                }
-                let new_edge = WeightedEdge {
-                    vertex: v_to.clone(),
-                    weight: v_from.dist(v_to).into(),
-                };
-                if let Some(edges) = graph.get_mut(v_from) {
-                    edges.push(new_edge);
-                    continue;
-                };
-                graph.insert(v_from.clone(), [new_edge].into());
-            }
         }
         graph
     }
@@ -163,8 +127,20 @@ where
     }
 }
 
+impl VertexCoord<Vertex0D> for Vertex0D {
+    fn dist(&self, _: &Vertex0D, rng: &mut ThreadRng) -> f64 {
+        rng.gen()
+    }
+
+    fn new_rand(rng: &mut ThreadRng) -> Vertex0D {
+        Vertex0D {
+            id: rng.gen::<f64>().into(),
+        }
+    }
+}
+
 impl VertexCoord<Vertex2D> for Vertex2D {
-    fn dist(&self, other: &Vertex2D) -> f64 {
+    fn dist(&self, other: &Vertex2D, _: &mut ThreadRng) -> f64 {
         let dst = [&other.x - &self.x, &other.y - &self.y]
             .into_iter()
             .map(|num| num.get().powi(2))
@@ -190,7 +166,7 @@ impl VertexCoord<Vertex2D> for Vertex2D {
 }
 
 impl VertexCoord<Vertex3D> for Vertex3D {
-    fn dist(&self, other: &Vertex3D) -> f64 {
+    fn dist(&self, other: &Vertex3D, _: &mut ThreadRng) -> f64 {
         [&other.x - &self.x, &other.y - &self.y, &other.z - &self.z]
             .into_iter()
             .map(|num| num.get().powi(2))
@@ -208,7 +184,7 @@ impl VertexCoord<Vertex3D> for Vertex3D {
 }
 
 impl VertexCoord<Vertex4D> for Vertex4D {
-    fn dist(&self, other: &Vertex4D) -> f64 {
+    fn dist(&self, other: &Vertex4D, _: &mut ThreadRng) -> f64 {
         [
             &other.r - &self.r,
             &other.g - &self.g,
@@ -233,7 +209,7 @@ impl VertexCoord<Vertex4D> for Vertex4D {
 
 #[cfg(test)]
 mod graph_tests {
-    use super::{CompleteUnitGraph, Graph, Vertex2D, Vertex3D, Vertex4D, WeightedEdge};
+    use super::{CompleteUnitGraph, Graph, Vertex0D, Vertex2D, Vertex3D, Vertex4D, WeightedEdge};
     use crate::prim_heap::Weight;
     use std::hash::Hash;
 
@@ -299,7 +275,7 @@ mod graph_tests {
         for size in 2..=16 {
             // The subscopes prevent copy-paste accidentally testing the wrong graph
             {
-                let graph_1d = CompleteUnitGraph::graph_1d(size);
+                let graph_1d = CompleteUnitGraph::graph_nd::<Vertex0D>(size);
                 assert_complete_graph(&graph_1d, size);
                 assert_edges_well_defined(&graph_1d);
             }
