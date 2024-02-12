@@ -14,6 +14,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// Processes CLI commands related to Prim's algorithm. Call `cargo run` with no options
+/// for a list of options.
 fn main() -> PsetRes<()> {
     let args: Vec<String> = env::args().collect();
     let cmd: CliCommand = args.as_slice().try_into()?;
@@ -43,8 +45,8 @@ fn mst_average(
     let mut total_time = Duration::ZERO;
 
     let mut handles: Vec<JoinHandle<(Weight<f64>, Duration)>> = Vec::with_capacity(num_trials);
-    for trial in 0..num_trials {
-        println!("spawning trial {trial}");
+    println!("\nspawning {} trials", num_trials);
+    for _ in 0..num_trials {
         let dim = *dimension;
         handles.push(thread::spawn(move || match dim {
             GraphDim::ZeroD => run_trial::<Vertex0D>(num_vertices),
