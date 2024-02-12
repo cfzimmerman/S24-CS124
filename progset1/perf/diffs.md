@@ -10,4 +10,4 @@
 
 - `sudo cargo flamegraph -- 0 16384 5 4`
   - 23.54 secs: initial
-  - \_ secs: use intermediate set for uniqueness but iterate vec for edge generation
+  - 18.69 secs: merge 0d improvements to nd

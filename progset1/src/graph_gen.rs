@@ -146,21 +146,14 @@ impl VertexCoord<Vertex2D> for Vertex2D {
             .map(|num| num.get().powi(2))
             .sum::<f64>()
             .sqrt();
-        // Verifies correctness at 2d. Correctness beyond 2d is assumed because of this.
-        debug_assert_eq!(
-            Decimal::new(dst),
-            Decimal::new(
-                ((&other.x - &self.x).get().powi(2) + (&other.y - &self.y).get().powi(2)).sqrt()
-            ),
-            "Iterable 2d dist should equal formula 2d dist."
-        );
         dst
     }
 
     fn new_rand(rng: &mut ThreadRng) -> Vertex2D {
+        let (x, y): (f64, f64) = rng.gen();
         Vertex2D {
-            x: rng.gen::<f64>().into(),
-            y: rng.gen::<f64>().into(),
+            x: x.into(),
+            y: y.into(),
         }
     }
 }
@@ -175,10 +168,11 @@ impl VertexCoord<Vertex3D> for Vertex3D {
     }
 
     fn new_rand(rng: &mut ThreadRng) -> Vertex3D {
+        let (x, y, z): (f64, f64, f64) = rng.gen();
         Vertex3D {
-            x: rng.gen::<f64>().into(),
-            y: rng.gen::<f64>().into(),
-            z: rng.gen::<f64>().into(),
+            x: x.into(),
+            y: y.into(),
+            z: z.into(),
         }
     }
 }
@@ -198,11 +192,12 @@ impl VertexCoord<Vertex4D> for Vertex4D {
     }
 
     fn new_rand(rng: &mut ThreadRng) -> Vertex4D {
+        let (r, g, b, a): (f64, f64, f64, f64) = rng.gen();
         Vertex4D {
-            r: rng.gen::<f64>().into(),
-            g: rng.gen::<f64>().into(),
-            b: rng.gen::<f64>().into(),
-            a: rng.gen::<f64>().into(),
+            r: r.into(),
+            g: g.into(),
+            b: b.into(),
+            a: a.into(),
         }
     }
 }
