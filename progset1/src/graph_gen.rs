@@ -128,6 +128,7 @@ where
 }
 
 impl VertexCoord<Vertex0D> for Vertex0D {
+    /// Dist for Vertex0D IGNORES other and just returns a random number.
     fn dist(&self, _: &Vertex0D, rng: &mut ThreadRng) -> f64 {
         rng.gen()
     }

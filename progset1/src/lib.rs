@@ -5,6 +5,7 @@ pub mod mst;
 /// Contains a binary-heap that's been specially adapted for use
 /// with Prim's or Dijkstra's algorithm.
 mod prim_heap;
+pub use prim_heap::Weight;
 
 /// Generates complete graphs of various dimensions
 /// based on the problem set specification.

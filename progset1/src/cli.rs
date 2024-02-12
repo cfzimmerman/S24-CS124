@@ -8,7 +8,7 @@ use std::{
 };
 
 /// The various graph dimensions this program supports.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum GraphDim {
     ZeroD,
     TwoD,
