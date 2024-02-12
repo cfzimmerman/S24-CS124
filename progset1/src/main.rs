@@ -5,13 +5,18 @@ use progset1::{
     graph_gen::{CompleteUnitGraph, Graph, Vertex2D, Vertex3D, Vertex4D},
     mst::Mst,
 };
-use std::{env, time::Instant};
+use std::{
+    env,
+    time::{Duration, Instant},
+};
 
 /// Returns the average weight of a `dimension` graph of size `num_vertices` over `num_trials`
 /// passes.
 fn mst_average(num_trials: usize, num_vertices: usize, dimension: &GraphDim) -> f64 {
     let mut total_weight = 0.;
-    for _ in 0..num_trials {
+    let mut total_time = Duration::ZERO;
+    for trial in 0..num_trials {
+        let timer = Instant::now();
         match &dimension {
             GraphDim::OneD => {
                 let graph = CompleteUnitGraph::graph_1d(num_vertices);
@@ -42,7 +47,11 @@ fn mst_average(num_trials: usize, num_vertices: usize, dimension: &GraphDim) -> 
                 };
             }
         };
+        let elapsed = timer.elapsed();
+        total_time += elapsed;
+        println!("trial: {}, duration: {:?}", trial, elapsed);
     }
+    println!("average time: {:?}", total_time / num_trials as u32);
     total_weight / num_trials as f64
 }
 
@@ -63,6 +72,7 @@ fn collect_stats(args: &CollectStatsArgs) -> PsetRes<()> {
                 runtime_secs: start.elapsed().as_secs(),
                 weight,
             };
+            println!("Finished in {} secs", res.runtime_secs);
             wtr.serialize(&res)?;
         }
     }

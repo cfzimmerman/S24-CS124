@@ -51,7 +51,7 @@ pub struct Vertex4D {
     pub a: Decimal,
 }
 
-pub type Edges<V> = HashSet<WeightedEdge<V>>;
+pub type Edges<V> = Vec<WeightedEdge<V>>;
 pub type Graph<V> = HashMap<Rc<V>, Edges<Rc<V>>>;
 
 /// Used to generate complete graphs of various dimensions with
@@ -62,38 +62,40 @@ impl CompleteUnitGraph {
     /// Generates a complete graph of `num_vertices` with ids
     /// from 0 to `num_vertices - 1`.
     pub fn graph_1d(num_vertices: usize) -> Graph<Vertex1D> {
-        let mut graph: Graph<Vertex1D> = HashMap::new();
+        let mut graph: Graph<Vertex1D> = HashMap::with_capacity(num_vertices);
         let mut rng = thread_rng();
 
         // Generate the vertices
-        let mut vertices = HashSet::new();
+        let mut vertices: Vec<Rc<Vertex1D>> = Vec::with_capacity(num_vertices);
         for id in 0..num_vertices {
-            vertices.insert(Rc::new(Vertex1D {
+            let vertex = Rc::new(Vertex1D {
                 id: Decimal::new(id as f64),
-            }));
+            });
+            vertices.push(vertex.clone());
+            graph.insert(vertex, Vec::with_capacity(num_vertices));
         }
 
         // Add edges so that it's a complete graph.
-        // Initialize the weights to -1. They'll be updated once
-        // all edges are in place.
-        for v_from in vertices.iter() {
-            for v_to in vertices.iter() {
-                if v_from == v_to {
-                    continue;
-                }
-                // Ensure both sides of an edge have the same weight
-                let weight = Self::get_existing_weight(&mut graph, v_from, v_to)
-                    .unwrap_or_else(|| rng.gen::<f64>().into());
-                let new_edge = WeightedEdge {
-                    vertex: v_to.clone(),
+        for (v1_ind, v1) in vertices.iter().enumerate() {
+            let mut v1_edges = Vec::with_capacity(vertices.len());
+            for v2 in vertices.iter().skip(v1_ind + 1) {
+                let weight = rng.gen::<f64>().into();
+                v1_edges.push(WeightedEdge {
+                    vertex: v2.clone(),
                     weight,
-                };
-                if let Some(edges) = graph.get_mut(v_from) {
-                    edges.insert(new_edge);
-                    continue;
-                };
-                graph.insert(v_from.clone(), [new_edge].into());
+                });
+                graph
+                    .get_mut(v2)
+                    .expect("v2 should have already been added to the graph")
+                    .push(WeightedEdge {
+                        vertex: v1.clone(),
+                        weight,
+                    });
             }
+            graph
+                .get_mut(v1)
+                .expect("v1 should have aready been added to the graph")
+                .extend(v1_edges.into_iter());
         }
         graph
     }
@@ -106,6 +108,7 @@ impl CompleteUnitGraph {
         V: VertexCoord<V> + PartialEq + Eq + Hash,
     {
         let mut graph: Graph<V> = HashMap::new();
+        // When making this a vec, have an intermediate hash to ensure uniqueness
         let mut vertices = HashSet::new();
         let mut rng = thread_rng();
 
@@ -125,49 +128,18 @@ impl CompleteUnitGraph {
                 if v_from == v_to {
                     continue;
                 }
-                let weight = Self::get_existing_weight(&mut graph, v_from, v_to)
-                    .unwrap_or_else(|| v_from.dist(v_to).into());
                 let new_edge = WeightedEdge {
                     vertex: v_to.clone(),
-                    weight,
+                    weight: v_from.dist(v_to).into(),
                 };
                 if let Some(edges) = graph.get_mut(v_from) {
-                    edges.insert(new_edge);
+                    edges.push(new_edge);
                     continue;
                 };
                 graph.insert(v_from.clone(), [new_edge].into());
             }
         }
         graph
-    }
-
-    /// Before adding a new edge, this function checks if a weighted edge
-    /// beginning on the other side already exists. If so, that weight is
-    /// returned. If not, None is returned.
-    /// Even for n-dimensional graphs, this is helpful to avoid float
-    /// imprecision when recalculating distance.
-    ///
-    /// The (old_to, old_from) naming implies that the caller is now suggesting
-    /// an edge in the other direction where old_to == new_from and old_from == new_to.
-    fn get_existing_weight<V>(
-        graph: &mut Graph<V>,
-        old_to: &Rc<V>,
-        old_from: &Rc<V>,
-    ) -> Option<Weight<f64>>
-    where
-        V: PartialEq + Eq + Hash,
-    {
-        if let Some(other_side) = graph.get(old_from) {
-            let target_edge = WeightedEdge {
-                vertex: old_to.clone(),
-                // Equality on edges doesn't check weights
-                weight: Weight::new(-1.),
-            };
-            if let Some(existing_edge) = other_side.get(&target_edge) {
-                return Some(existing_edge.weight);
-            }
-        }
-        None
     }
 }
 
@@ -300,10 +272,13 @@ mod graph_tests {
                 let other_side_weight = &graph
                     .get(&edge.vertex)
                     .expect("Other vertex should be in the graph")
-                    .get(&WeightedEdge {
-                        vertex: vertex.clone(),
-                        // Again, equality only looks at the vertex.
-                        weight: Weight::new(-1.),
+                    .iter()
+                    .find(|el| {
+                        el == &&WeightedEdge {
+                            vertex: vertex.clone(),
+                            // Again, equality only looks at the vertex.
+                            weight: Weight::new(-1.),
+                        }
                     })
                     .expect("Other vertex should have an edge pointing to curr vertex")
                     .weight;

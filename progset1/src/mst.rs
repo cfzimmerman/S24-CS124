@@ -252,7 +252,7 @@ mod mst_tests {
                 id: Decimal::new(id as f64),
             });
             vertices.push(vertex.clone());
-            graph.insert(vertex, HashSet::new());
+            graph.insert(vertex, Vec::new());
         }
 
         // Add all edges. The hard-coding is undesirable, but this ensures we have

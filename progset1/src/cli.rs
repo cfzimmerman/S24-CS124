@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
-
 use crate::error::{PsetErr, PsetRes};
+use serde::{Deserialize, Serialize};
 use std::{
     fs,
     num::ParseIntError,
