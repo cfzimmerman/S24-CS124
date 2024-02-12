@@ -17,7 +17,12 @@ pub enum PsetErr {
     #[error(transparent)]
     ParseInt(#[from] std::num::ParseIntError),
 
-    #[cfg(test)]
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    Infallible(#[from] std::convert::Infallible),
+
+    #[error(transparent)]
+    Csv(#[from] csv::Error),
 }

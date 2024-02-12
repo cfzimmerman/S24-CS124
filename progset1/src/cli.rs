@@ -1,5 +1,12 @@
+use serde::{Deserialize, Serialize};
+
 use crate::error::{PsetErr, PsetRes};
-use std::{num::ParseIntError, path::PathBuf, str::FromStr, time::Duration};
+use std::{
+    fs,
+    num::ParseIntError,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 /// The various graph dimensions this program supports.
 #[derive(Debug)]
@@ -20,7 +27,7 @@ pub struct MstAverageArgs {
 
 /// A configuration object expected in the config file provided
 /// by a stats collection file. Inputs should be in Json.
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct DataCollectionConfig {
     /// Number of vertices
     pub graph_sizes: Vec<usize>,
@@ -28,17 +35,17 @@ pub struct DataCollectionConfig {
     pub trials_per_size: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct CollectedStat {
     pub graph_size: usize,
     pub graph_dimension: usize,
-    pub trial_number: usize,
-    pub runtime: Duration,
+    pub num_trials: usize,
+    pub runtime_secs: u64,
     pub weight: f64,
 }
 
 #[derive(Debug)]
-pub struct CollectStats {
+pub struct CollectStatsArgs {
     pub output_filepath: PathBuf,
     pub config_filepath: PathBuf,
     pub config: DataCollectionConfig,
@@ -51,6 +58,9 @@ pub enum CliCommand {
     /// and finds the weight of its MST a total of `num_trials`
     /// times, returning the average weight,
     MstAverage(MstAverageArgs),
+
+    /// Runs experiments configured by an input file, writing outputs to the specified CSV.
+    CollectStats(CollectStatsArgs),
 }
 
 impl CliCommand {
@@ -102,23 +112,42 @@ impl TryFrom<&[String]> for CliCommand {
                 Ok(Self::MstAverage(MstAverageArgs {
                     num_vertices,
                     num_trials,
-                    graph_dimension: dimension.try_into()?,
+                    graph_dimension: (&dimension).try_into()?,
                 }))
             }
-            /*
             1 => {
-                let config_filepath = value.get(2).ok_or_else(|| PsetErr::Static("expected config filepath"))?;
-                let output_filepath = value.get(3).ok_or_else(|| PsetErr::Static("expected output filepath"))?;
-            },
-            */
+                let config_filepath = value
+                    .get(2)
+                    .ok_or_else(|| PsetErr::Static("expected config filepath"))?;
+                let config_filepath = PathBuf::from_str(config_filepath.as_str())?;
+                let output_filepath = value
+                    .get(3)
+                    .ok_or_else(|| PsetErr::Static("expected output filepath"))?;
+                let output_filepath = PathBuf::from_str(output_filepath.as_str())?;
+                let config = DataCollectionConfig::try_from_path(config_filepath.as_path())?;
+                Ok(Self::CollectStats(CollectStatsArgs {
+                    output_filepath,
+                    config_filepath,
+                    config,
+                }))
+            }
             _ => Err(CliCommand::usage_err("unsupported mode num")),
         }
     }
 }
 
-impl TryFrom<usize> for GraphDim {
+impl DataCollectionConfig {
+    /// Attempts to retrieve and parse config from the provided file path.
+    fn try_from_path(path: &Path) -> PsetRes<Self> {
+        let file = fs::read_to_string(path)?;
+        let config: Self = serde_json::from_str(&file)?;
+        Ok(config)
+    }
+}
+
+impl TryFrom<&usize> for GraphDim {
     type Error = PsetErr;
-    fn try_from(value: usize) -> Result<Self, Self::Error> {
+    fn try_from(value: &usize) -> Result<Self, Self::Error> {
         match value {
             1 => Ok(Self::OneD),
             2 => Ok(Self::TwoD),
