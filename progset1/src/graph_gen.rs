@@ -230,7 +230,7 @@ impl VertexCoord<Vertex4D> for Vertex4D {
 impl GraphDim {
     pub fn get_max_edge_weight(self, num_vertices: usize) -> Weight<f64> {
         let num_vertices = num_vertices as f64;
-        // Estimated by power series trend lines from samples between 128 and 32768:
+        // Estimated by power series trend lines from samples from 128 to 32768:
         // https://docs.google.com/spreadsheets/d/1ILvyZYYi5nrMkP_qPR2DdfvpdP5haJmWxkBTr-FHyEo/edit?usp=sharing
         match self {
             Self::ZeroD => Weight::from(3. * num_vertices.powf(-0.75)),

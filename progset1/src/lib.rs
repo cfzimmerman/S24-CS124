@@ -22,7 +22,7 @@ pub mod cli;
 /// a hash map.
 mod decimal;
 
-/// Contains a common error type for easy error handling.
+/// Defines a crate-wide error type.
 pub mod error;
 
 /// Retrieves bulk data for tests (mostly used by prim_heap)
