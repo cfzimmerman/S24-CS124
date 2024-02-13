@@ -95,7 +95,7 @@ impl CompleteUnitGraph {
         }
 
         // Add edges
-        let trim_threshold = trim_threshold.unwrap_or_else(|| f64::INFINITY);
+        let trim_threshold = trim_threshold.unwrap_or(f64::INFINITY);
         for (v1_ind, v1) in vertices.iter().enumerate() {
             let mut v1_edges = Vec::with_capacity(vertices.len());
             for v2 in vertices.iter().skip(v1_ind + 1) {

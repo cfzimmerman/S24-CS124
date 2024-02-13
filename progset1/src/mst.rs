@@ -243,7 +243,7 @@ mod mst_tests {
     fn heaviest_edge() {
         for dimension in [0usize, 2, 3, 4] {
             for size in [
-                /*64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384*/ 32768,
+                64, 128, 256, 512, 1024, /* 2048, 4096, 8192, 16384, 32768,*/
             ] {
                 let dim: GraphDim = dimension
                     .try_into()
@@ -271,10 +271,12 @@ mod mst_tests {
                     }
                 };
                 let guessed_bound = dim.get_max_edge_weight(size);
+                /*
                 println!(
                     "dimension: {dimension}, size: {size}, heaviest: {heaviest}, guessed: {}",
                     guessed_bound.get()
                 );
+                */
                 assert!(
                     guessed_bound.take() > heaviest,
                     "Would have trimmed an edge in the mst"
