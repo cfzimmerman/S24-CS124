@@ -21,7 +21,7 @@ fn main() -> PsetRes<()> {
     let cmd: CliCommand = args.as_slice().try_into()?;
     match cmd {
         CliCommand::MstAverage(args) => {
-            let avg_weight = mst_average(args.num_trials, args.num_vertices, &args.graph_dimension);
+            let avg_weight = mst_average(args.num_trials, args.num_vertices, args.graph_dimension);
             println!(
                 "\naverage: {:?}\nnumpoints: {}\nnumtrials: {}\ndimension: {:?}",
                 avg_weight?, args.num_vertices, args.num_trials, args.graph_dimension
@@ -39,16 +39,15 @@ fn main() -> PsetRes<()> {
 fn mst_average(
     num_trials: usize,
     num_vertices: usize,
-    dimension: &GraphDim,
+    dimension: GraphDim,
 ) -> PsetRes<Weight<f64>> {
     let mut total_weight = 0.;
     let mut total_time = Duration::ZERO;
 
+    println!("\nspawning {num_trials} trials");
     let mut handles: Vec<JoinHandle<(Weight<f64>, Duration)>> = Vec::with_capacity(num_trials);
-    println!("\nspawning {} trials", num_trials);
     for _ in 0..num_trials {
-        let dim = *dimension;
-        handles.push(thread::spawn(move || match dim {
+        handles.push(thread::spawn(move || match dimension {
             GraphDim::ZeroD => run_trial::<Vertex0D>(num_vertices),
             GraphDim::TwoD => run_trial::<Vertex2D>(num_vertices),
             GraphDim::ThreeD => run_trial::<Vertex3D>(num_vertices),
@@ -63,8 +62,8 @@ fn mst_average(
         total_weight += weight.get();
         total_time += time;
         println!(
-            "trial: {}, num_vertices: {}, dimension: {:?}, time: {:?}",
-            ind, num_vertices, dimension, time
+            "trial: {ind}, num_vertices: {num_vertices}, dimension: {:?}, time: {:?}",
+            dimension, time
         );
     }
     println!("average time: {:?}", total_time / num_trials as u32);
@@ -91,17 +90,17 @@ where
 /// at the given location.
 fn collect_stats(args: &CollectStatsArgs) -> PsetRes<()> {
     let mut wtr = Writer::from_path(args.output_filepath.as_path())?;
-    for graph_dim in args.config.graph_dimensions.iter() {
-        for graph_size in args.config.graph_sizes.iter() {
-            let dimension: GraphDim = graph_dim.try_into()?;
+    for graph_dim in args.config.graph_dimensions.iter().copied() {
+        for graph_size in args.config.graph_sizes.iter().copied() {
+            let dimension: GraphDim = (&graph_dim).try_into()?;
             let start = Instant::now();
-            let weight = mst_average(args.config.trials_per_size, *graph_size, &dimension)?;
+            let weight = mst_average(args.config.trials_per_size, graph_size, dimension)?;
             let res = CollectedStat {
-                graph_size: *graph_size,
-                graph_dimension: *graph_dim,
+                graph_size,
+                graph_dimension: graph_dim,
                 num_trials: args.config.trials_per_size,
                 runtime_secs: start.elapsed().as_secs(),
-                weight: *weight.get(),
+                weight: weight.take(),
             };
             wtr.serialize(&res)?;
         }

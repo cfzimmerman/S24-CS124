@@ -67,12 +67,11 @@ where
             }
 
             // Edges are only None if the vertex is disconnected.
-            let edges = match graph.get(&vertex) {
-                Some(e) => e,
-                None => continue,
+            let Some(edges) = graph.get(&vertex) else {
+                continue;
             };
 
-            for neighbor in edges.iter() {
+            for neighbor in edges {
                 // Only consider neighbors still in the heap.
                 if finished.contains(&neighbor.vertex) {
                     continue;

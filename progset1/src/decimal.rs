@@ -20,7 +20,7 @@ impl Decimal {
         Decimal((num * 10f64.powi(num_decimals)) as i64)
     }
 
-    pub fn get(&self) -> f64 {
+    pub fn get(self) -> f64 {
         self.0 as f64 / 10f64.powi(PREC_POW10)
     }
 }

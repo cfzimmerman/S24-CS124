@@ -12,3 +12,4 @@
   - 23.54 secs: initial
   - 18.69 secs: merge 0d improvements to nd
   - 12.30 secs (61.52 secs total): parallelized trials
+  - 11.36 secs (56.81 secs total): second run of previous test

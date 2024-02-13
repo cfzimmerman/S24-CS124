@@ -16,6 +16,10 @@ where
     pub fn get(&self) -> &W {
         &self.0
     }
+
+    pub fn take(self) -> W {
+        self.0
+    }
 }
 
 impl From<f64> for Weight<f64> {
@@ -133,7 +137,7 @@ where
             return;
         }
         self.tvec.swap(curr_ind, parent_ind);
-        self.bubble_up(parent_ind)
+        self.bubble_up(parent_ind);
     }
 
     /// Performs down-heapify on a value, respecting the min heap property
@@ -158,7 +162,7 @@ where
             return;
         }
         self.tvec.swap(curr_ind, min_child_ind);
-        self.bubble_down(min_child_ind)
+        self.bubble_down(min_child_ind);
     }
 }
 
@@ -247,9 +251,8 @@ where
     /// at the given index. Returns None if the given index is
     /// out of bounds.
     pub fn get_weight_of_ind(&self, ind: usize) -> Option<&Weight<W>> {
-        let el = match self.lst.get(ind) {
-            Some(e) => e,
-            None => return None,
+        let Some(el) = self.lst.get(ind) else {
+            return None;
         };
         let meta = &self
             .hmap

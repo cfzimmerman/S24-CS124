@@ -85,7 +85,7 @@ impl CompleteUnitGraph {
         for (v1_ind, v1) in vertices.iter().enumerate() {
             let mut v1_edges = Vec::with_capacity(vertices.len());
             for v2 in vertices.iter().skip(v1_ind + 1) {
-                let weight = v1.dist(&v2, &mut rng).into();
+                let weight = v1.dist(v2, &mut rng).into();
                 v1_edges.push(WeightedEdge {
                     vertex: v2.clone(),
                     weight,
@@ -123,7 +123,7 @@ where
     T: PartialEq + Eq + Hash,
 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.vertex.hash(state)
+        self.vertex.hash(state);
     }
 }
 
@@ -142,12 +142,11 @@ impl VertexCoord<Vertex0D> for Vertex0D {
 
 impl VertexCoord<Vertex2D> for Vertex2D {
     fn dist(&self, other: &Vertex2D, _: &mut ThreadRng) -> f64 {
-        let dst = [&other.x - &self.x, &other.y - &self.y]
+        [&other.x - &self.x, &other.y - &self.y]
             .into_iter()
             .map(|num| num.get().powi(2))
             .sum::<f64>()
-            .sqrt();
-        dst
+            .sqrt()
     }
 
     fn new_rand(rng: &mut ThreadRng) -> Vertex2D {

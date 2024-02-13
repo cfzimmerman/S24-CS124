@@ -75,7 +75,7 @@ impl CliCommand {
         "
         );
 
-        PsetErr::Cxt(format!("Parse error: {}", issue))
+        PsetErr::Cxt(format!("Parse error: {issue}"))
     }
 
     fn get_parsed<T: FromStr<Err = ParseIntError>>(
@@ -83,9 +83,8 @@ impl CliCommand {
         ind: usize,
         issue: &str,
     ) -> PsetRes<T> {
-        let val = match args.get(ind) {
-            Some(val) => val,
-            None => return Err(CliCommand::usage_err(issue)),
+        let Some(val) = args.get(ind) else {
+            return Err(CliCommand::usage_err(issue));
         };
         let parsed = val.parse::<T>()?;
         Ok(parsed)
@@ -153,8 +152,7 @@ impl TryFrom<&usize> for GraphDim {
             3 => Ok(Self::ThreeD),
             4 => Ok(Self::FourD),
             _ => Err(PsetErr::Cxt(format!(
-                "{} does not correspond to a supported graph dimension: 0, 2, 3, 4.",
-                value
+                "{value} does not correspond to a supported graph dimension: 0, 2, 3, 4."
             ))),
         }
     }
