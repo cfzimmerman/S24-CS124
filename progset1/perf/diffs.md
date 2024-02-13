@@ -13,3 +13,4 @@
   - 18.69 secs: merge 0d improvements to nd
   - 11.36 secs (56.81 secs total): parallelized trials
   - 166.43 ms (832.15 ms total): with trimming, validated correct up to 32k
+  - 160.55 ms (802.74 ms total): with tighter trimming estimate

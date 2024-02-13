@@ -1,5 +1,0 @@
-{
-  "graph_sizes": [128, 256, 512, 1024, 2048, 4096, 8192, 16384],
-  "graph_dimensions": [0, 2, 3, 4],
-  "trials_per_size": 5
-}
