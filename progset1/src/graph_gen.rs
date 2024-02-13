@@ -1,4 +1,4 @@
-use crate::{decimal::Decimal, prim_heap::Weight};
+use crate::{decimal::Decimal, error::PsetErr, prim_heap::Weight};
 use rand::{rngs::ThreadRng, thread_rng, Rng};
 use std::{collections::HashMap, hash::Hash, rc::Rc};
 
@@ -8,12 +8,25 @@ pub trait VertexCoord<T>
 where
     T: PartialEq + Eq + Hash,
 {
+    /// This is the longest possible edge across the state space.
+    /// For a unit graph of `n` dimensions, this is `sqrt(n)`
+    const DIMENSION: GraphDim;
+
     /// How far apart two coordinates are in an n-dimensional space.
     /// The ThreadRng is an ugly addition for the zero dimension case
     fn dist(&self, other: &T, rng: &mut ThreadRng) -> f64;
 
     /// Generates a new coordinate at a random location.
     fn new_rand(rng: &mut ThreadRng) -> T;
+}
+
+/// The various graph dimensions this program supports.
+#[derive(Debug, Clone, Copy)]
+pub enum GraphDim {
+    ZeroD,
+    TwoD,
+    ThreeD,
+    FourD,
 }
 
 #[derive(Debug)]
@@ -59,7 +72,7 @@ impl CompleteUnitGraph {
     /// Generates a complete n dimensional graph where each coordinate is generated
     /// by calling T::new_rand and edge distances are the distance between
     /// points.
-    pub fn graph_nd<V>(num_vertices: usize) -> Graph<V>
+    pub fn graph_nd<V>(num_vertices: usize, trim_threshold: Option<f64>) -> Graph<V>
     where
         V: VertexCoord<V> + PartialEq + Eq + Hash,
     {
@@ -82,10 +95,14 @@ impl CompleteUnitGraph {
         }
 
         // Add edges
+        let trim_threshold = trim_threshold.unwrap_or_else(|| f64::INFINITY);
         for (v1_ind, v1) in vertices.iter().enumerate() {
             let mut v1_edges = Vec::with_capacity(vertices.len());
             for v2 in vertices.iter().skip(v1_ind + 1) {
-                let weight = v1.dist(v2, &mut rng).into();
+                let weight: Weight<f64> = v1.dist(v2, &mut rng).into();
+                if weight.get() > &trim_threshold {
+                    continue;
+                }
                 v1_edges.push(WeightedEdge {
                     vertex: v2.clone(),
                     weight,
@@ -128,6 +145,8 @@ where
 }
 
 impl VertexCoord<Vertex0D> for Vertex0D {
+    const DIMENSION: GraphDim = GraphDim::ZeroD;
+
     /// Dist for Vertex0D IGNORES other and just returns a random number.
     fn dist(&self, _: &Vertex0D, rng: &mut ThreadRng) -> f64 {
         rng.gen()
@@ -141,6 +160,8 @@ impl VertexCoord<Vertex0D> for Vertex0D {
 }
 
 impl VertexCoord<Vertex2D> for Vertex2D {
+    const DIMENSION: GraphDim = GraphDim::TwoD;
+
     fn dist(&self, other: &Vertex2D, _: &mut ThreadRng) -> f64 {
         [&other.x - &self.x, &other.y - &self.y]
             .into_iter()
@@ -159,6 +180,8 @@ impl VertexCoord<Vertex2D> for Vertex2D {
 }
 
 impl VertexCoord<Vertex3D> for Vertex3D {
+    const DIMENSION: GraphDim = GraphDim::ThreeD;
+
     fn dist(&self, other: &Vertex3D, _: &mut ThreadRng) -> f64 {
         [&other.x - &self.x, &other.y - &self.y, &other.z - &self.z]
             .into_iter()
@@ -178,6 +201,8 @@ impl VertexCoord<Vertex3D> for Vertex3D {
 }
 
 impl VertexCoord<Vertex4D> for Vertex4D {
+    const DIMENSION: GraphDim = GraphDim::FourD;
+
     fn dist(&self, other: &Vertex4D, _: &mut ThreadRng) -> f64 {
         [
             &other.r - &self.r,
@@ -198,6 +223,39 @@ impl VertexCoord<Vertex4D> for Vertex4D {
             g: g.into(),
             b: b.into(),
             a: a.into(),
+        }
+    }
+}
+
+impl GraphDim {
+    pub fn get_max_edge_weight(self, num_vertices: usize) -> Weight<f64> {
+        let divisible_dim = 1usize.max(self.into()) as f64;
+        Weight::new(divisible_dim / (num_vertices as f64).powf(0.3))
+    }
+}
+
+impl TryFrom<usize> for GraphDim {
+    type Error = PsetErr;
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::ZeroD),
+            2 => Ok(Self::TwoD),
+            3 => Ok(Self::ThreeD),
+            4 => Ok(Self::FourD),
+            _ => Err(PsetErr::Cxt(format!(
+                "{value} does not correspond to a supported graph dimension: 0, 2, 3, 4."
+            ))),
+        }
+    }
+}
+
+impl From<GraphDim> for usize {
+    fn from(value: GraphDim) -> Self {
+        match value {
+            GraphDim::ZeroD => 0,
+            GraphDim::TwoD => 2,
+            GraphDim::ThreeD => 3,
+            GraphDim::FourD => 4,
         }
     }
 }
@@ -270,22 +328,22 @@ mod graph_tests {
         for size in 2..=16 {
             // The subscopes prevent copy-paste accidentally testing the wrong graph
             {
-                let graph_1d = CompleteUnitGraph::graph_nd::<Vertex0D>(size);
+                let graph_1d = CompleteUnitGraph::graph_nd::<Vertex0D>(size, None);
                 assert_complete_graph(&graph_1d, size);
                 assert_edges_well_defined(&graph_1d);
             }
             {
-                let graph_2d = CompleteUnitGraph::graph_nd::<Vertex2D>(size);
+                let graph_2d = CompleteUnitGraph::graph_nd::<Vertex2D>(size, None);
                 assert_complete_graph(&graph_2d, size);
                 assert_edges_well_defined(&graph_2d);
             }
             {
-                let graph_3d = CompleteUnitGraph::graph_nd::<Vertex3D>(size);
+                let graph_3d = CompleteUnitGraph::graph_nd::<Vertex3D>(size, None);
                 assert_complete_graph(&graph_3d, size);
                 assert_edges_well_defined(&graph_3d);
             }
             {
-                let graph_4d = CompleteUnitGraph::graph_nd::<Vertex4D>(size);
+                let graph_4d = CompleteUnitGraph::graph_nd::<Vertex4D>(size, None);
                 assert_complete_graph(&graph_4d, size);
                 assert_edges_well_defined(&graph_4d);
             }

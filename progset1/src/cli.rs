@@ -1,4 +1,7 @@
-use crate::error::{PsetErr, PsetRes};
+use crate::{
+    error::{PsetErr, PsetRes},
+    graph_gen::GraphDim,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -7,13 +10,10 @@ use std::{
     str::FromStr,
 };
 
-/// The various graph dimensions this program supports.
 #[derive(Debug, Clone, Copy)]
-pub enum GraphDim {
-    ZeroD,
-    TwoD,
-    ThreeD,
-    FourD,
+pub enum GraphPerf {
+    WithTrim,
+    WithoutTrim,
 }
 
 /// Structures the input arguments to a TrialAverage command.
@@ -22,6 +22,7 @@ pub struct MstAverageArgs {
     pub num_vertices: usize,
     pub num_trials: usize,
     pub graph_dimension: GraphDim,
+    pub trimming: GraphPerf,
 }
 
 /// A configuration object expected in the config file provided
@@ -66,8 +67,8 @@ impl CliCommand {
     fn usage_err(issue: &str) -> PsetErr {
         eprintln!(
             r"Supported commands:
-        // Returns the average MST weight given inputs:
-        > [cargo run --release] 0 [usize numpoints] [usize numtrials] [usize dimension]
+        // Returns the average MST weight given inputs. Absence of notrim assumes trimming:
+        > [cargo run --release] 0 [usize numpoints] [usize numtrials] [usize dimension] [?notrim]
 
         // Runs the commmands specified in the config filepath and writes results as a 
         // CSV back to the output filepath:
@@ -107,10 +108,22 @@ impl TryFrom<&[String]> for CliCommand {
                     CliCommand::get_parsed(value, 3, "expected usize num_trials")?;
                 let dimension: usize =
                     CliCommand::get_parsed(value, 4, "expected usize dimension")?;
+                let no_trim: bool = value
+                    .get(5)
+                    .map(|s| s.as_str())
+                    .unwrap_or_else(|| "trim")
+                    .to_lowercase()
+                    == "notrim";
+                let trimming: GraphPerf = if no_trim {
+                    GraphPerf::WithoutTrim
+                } else {
+                    GraphPerf::WithTrim
+                };
                 Ok(Self::MstAverage(MstAverageArgs {
                     num_vertices,
                     num_trials,
-                    graph_dimension: (&dimension).try_into()?,
+                    graph_dimension: dimension.try_into()?,
+                    trimming,
                 }))
             }
             1 => {
@@ -140,20 +153,5 @@ impl DataCollectionConfig {
         let file = fs::read_to_string(path)?;
         let config: Self = serde_json::from_str(&file)?;
         Ok(config)
-    }
-}
-
-impl TryFrom<&usize> for GraphDim {
-    type Error = PsetErr;
-    fn try_from(value: &usize) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::ZeroD),
-            2 => Ok(Self::TwoD),
-            3 => Ok(Self::ThreeD),
-            4 => Ok(Self::FourD),
-            _ => Err(PsetErr::Cxt(format!(
-                "{value} does not correspond to a supported graph dimension: 0, 2, 3, 4."
-            ))),
-        }
     }
 }

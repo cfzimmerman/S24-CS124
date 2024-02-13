@@ -106,7 +106,8 @@ mod mst_tests {
     use crate::{
         decimal::Decimal,
         graph_gen::{
-            CompleteUnitGraph, Graph, Vertex0D, Vertex2D, Vertex3D, Vertex4D, WeightedEdge,
+            CompleteUnitGraph, Graph, GraphDim, Vertex0D, Vertex2D, Vertex3D, Vertex4D,
+            WeightedEdge,
         },
     };
 
@@ -200,26 +201,86 @@ mod mst_tests {
 
     #[test]
     fn mst_0d_graph() {
-        let graph = CompleteUnitGraph::graph_nd::<Vertex0D>(NUM_VERTICES);
+        let graph = CompleteUnitGraph::graph_nd::<Vertex0D>(NUM_VERTICES, None);
         assert_mst(&graph);
     }
 
     #[test]
     fn mst_2d_graph() {
-        let graph = CompleteUnitGraph::graph_nd::<Vertex2D>(NUM_VERTICES);
+        let graph = CompleteUnitGraph::graph_nd::<Vertex2D>(NUM_VERTICES, None);
         assert_mst(&graph);
     }
 
     #[test]
     fn mst_3d_graph() {
-        let graph = CompleteUnitGraph::graph_nd::<Vertex3D>(NUM_VERTICES);
+        let graph = CompleteUnitGraph::graph_nd::<Vertex3D>(NUM_VERTICES, None);
         assert_mst(&graph);
     }
 
     #[test]
     fn mst_4d_graph() {
-        let graph = CompleteUnitGraph::graph_nd::<Vertex4D>(NUM_VERTICES);
+        let graph = CompleteUnitGraph::graph_nd::<Vertex4D>(NUM_VERTICES, None);
         assert_mst(&graph);
+    }
+
+    fn find_heaviest_edge<T>(mst: &Mst<T>) -> f64 {
+        let mut heaviest = 0f64;
+        for edge in mst.prevs.iter() {
+            heaviest = heaviest.max(*edge.1.weight.get());
+        }
+        return heaviest;
+    }
+
+    /// Shortens the process of getting a start vertex when one is definitely
+    /// supposed to be there.
+    fn expect_start<V>(graph: &Graph<V>) -> &Rc<V> {
+        graph.keys().next().expect("Graph should not be empty")
+    }
+
+    /// Asserts (with certain probability of failure) that the heaviest edge in
+    /// graphs of various sizes and dimensions fit within the suggested trim limit.
+    #[test]
+    fn heaviest_edge() {
+        for dimension in [0usize, 2, 3, 4] {
+            for size in [
+                /*64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384*/ 32768,
+            ] {
+                let dim: GraphDim = dimension
+                    .try_into()
+                    .expect("Hard-coded graph dimension should be viable.");
+                let heaviest = match dim {
+                    GraphDim::ZeroD => {
+                        let graph = CompleteUnitGraph::graph_nd::<Vertex0D>(size, None);
+                        let mst = Mst::from_prim(&graph, expect_start(&graph));
+                        find_heaviest_edge(&mst)
+                    }
+                    GraphDim::TwoD => {
+                        let graph = CompleteUnitGraph::graph_nd::<Vertex2D>(size, None);
+                        let mst = Mst::from_prim(&graph, expect_start(&graph));
+                        find_heaviest_edge(&mst)
+                    }
+                    GraphDim::ThreeD => {
+                        let graph = CompleteUnitGraph::graph_nd::<Vertex3D>(size, None);
+                        let mst = Mst::from_prim(&graph, expect_start(&graph));
+                        find_heaviest_edge(&mst)
+                    }
+                    GraphDim::FourD => {
+                        let graph = CompleteUnitGraph::graph_nd::<Vertex4D>(size, None);
+                        let mst = Mst::from_prim(&graph, expect_start(&graph));
+                        find_heaviest_edge(&mst)
+                    }
+                };
+                let guessed_bound = dim.get_max_edge_weight(size);
+                println!(
+                    "dimension: {dimension}, size: {size}, heaviest: {heaviest}, guessed: {}",
+                    guessed_bound.get()
+                );
+                assert!(
+                    guessed_bound.take() > heaviest,
+                    "Would have trimmed an edge in the mst"
+                );
+            }
+        }
     }
 
     /// Verify MST calculation is correct by comparing it to a known MST. The graph here

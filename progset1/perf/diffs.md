@@ -11,5 +11,5 @@
 - `sudo cargo flamegraph -- 0 16384 5 4`
   - 23.54 secs: initial
   - 18.69 secs: merge 0d improvements to nd
-  - 12.30 secs (61.52 secs total): parallelized trials
-  - 11.36 secs (56.81 secs total): second run of previous test
+  - 11.36 secs (56.81 secs total): parallelized trials
+  - 166.43 ms (832.15 ms total): with trimming, validated correct up to 32k
