@@ -103,6 +103,8 @@ where
 
 #[cfg(test)]
 mod mst_tests {
+    use serde::Serialize;
+
     use crate::{
         decimal::Decimal,
         graph_gen::{
@@ -237,13 +239,24 @@ mod mst_tests {
         graph.keys().next().expect("Graph should not be empty")
     }
 
+    #[derive(Serialize)]
+    struct HeaviestEdge {
+        dimension: usize,
+        size: usize,
+        heaviest: f64,
+    }
+
     /// Asserts (with certain probability of failure) that the heaviest edge in
     /// graphs of various sizes and dimensions fit within the suggested trim limit.
     #[test]
     fn heaviest_edge() {
+        /*
+        let mut wtr = Writer::from_path("./file_io/heaviest_edge.csv")
+            .expect("output csv path should be available");
+        */
         for dimension in [0usize, 2, 3, 4] {
             for size in [
-                64, 128, 256, 512, 1024, /* 2048, 4096, 8192, 16384, 32768,*/
+                64, 128, 256, 512, 1024, /*, 2048, 4096, 8192, 16384, 32768*/
             ] {
                 let dim: GraphDim = dimension
                     .try_into()
@@ -272,17 +285,24 @@ mod mst_tests {
                 };
                 let guessed_bound = dim.get_max_edge_weight(size);
                 /*
+                wtr.serialize(HeaviestEdge {
+                    dimension,
+                    size,
+                    heaviest,
+                })
+                .expect("Heaviest edge serialization should work");
+                */
                 println!(
                     "dimension: {dimension}, size: {size}, heaviest: {heaviest}, guessed: {}",
                     guessed_bound.get()
                 );
-                */
                 assert!(
                     guessed_bound.take() > heaviest,
                     "Would have trimmed an edge in the mst"
                 );
             }
         }
+        // wtr.flush().expect("Flushing should succeed");
     }
 
     /// Verify MST calculation is correct by comparing it to a known MST. The graph here

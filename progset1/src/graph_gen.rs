@@ -229,8 +229,15 @@ impl VertexCoord<Vertex4D> for Vertex4D {
 
 impl GraphDim {
     pub fn get_max_edge_weight(self, num_vertices: usize) -> Weight<f64> {
-        let divisible_dim = 1usize.max(self.into()) as f64;
-        Weight::new(divisible_dim / (num_vertices as f64).powf(0.3))
+        let num_vertices = num_vertices as f64;
+        // Estimated by power series trend lines from samples between 128 and 32768:
+        // https://docs.google.com/spreadsheets/d/1ILvyZYYi5nrMkP_qPR2DdfvpdP5haJmWxkBTr-FHyEo/edit?usp=sharing
+        match self {
+            Self::ZeroD => Weight::from(3. * num_vertices.powf(-0.75)),
+            Self::TwoD => Weight::from(1.4 * num_vertices.powf(-0.38)),
+            Self::ThreeD => Weight::from(1.25 * num_vertices.powf(-0.26)),
+            Self::FourD => Weight::from(1.45 * num_vertices.powf(-0.2)),
+        }
     }
 }
 
