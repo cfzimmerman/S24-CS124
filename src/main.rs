@@ -28,10 +28,13 @@ fn main() -> PsetRes<()> {
                 args.num_vertices,
                 args.graph_dimension,
                 args.trimming,
-            );
+            )?;
+            let dimension: usize = args.graph_dimension.into();
             println!(
-                "\naverage: {:?}\nnumpoints: {}\nnumtrials: {}\ndimension: {:?}",
-                avg_weight?, args.num_vertices, args.num_trials, args.graph_dimension
+                "{} {} {} {dimension}",
+                avg_weight.get(),
+                args.num_vertices,
+                args.num_trials,
             );
         }
         CliCommand::CollectStats(args) => {
@@ -52,7 +55,7 @@ fn mst_average(
     let mut total_weight = 0.;
     let mut total_time = Duration::ZERO;
 
-    println!("\nspawning {num_trials} trials, cfg: {:?}", trimming);
+    // println!("\nspawning {num_trials} trials, cfg: {:?}", trimming);
     let mut handles: Vec<JoinHandle<(Weight<f64>, Duration)>> = Vec::with_capacity(num_trials);
     for _ in 0..num_trials {
         handles.push(thread::spawn(move || match dimension {
@@ -63,18 +66,20 @@ fn mst_average(
         }));
     }
 
-    for (ind, handle) in handles.into_iter().enumerate() {
+    for (_, handle) in handles.into_iter().enumerate() {
         let (weight, time) = handle
             .join()
             .map_err(|e| PsetErr::Cxt(format!("{:?}", e)))?;
         total_weight += weight.get();
         total_time += time;
+        /*
         println!(
             "trial: {ind}, num_vertices: {num_vertices}, dimension: {:?}, time: {:?}",
             dimension, time
         );
+        */
     }
-    println!("average time: {:?}", total_time / num_trials as u32);
+    // println!("average time: {:?}", total_time / num_trials as u32);
     Ok((total_weight / num_trials as f64).into())
 }
 

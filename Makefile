@@ -1,3 +1,6 @@
+.PHONY: randmst
+.PHONY: test 
+
 randmst: 
 	cargo build --release && cp ./target/release/progset1 ./randmst
 
