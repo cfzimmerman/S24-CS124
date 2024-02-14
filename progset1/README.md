@@ -36,11 +36,11 @@ The first graph was definitely surprising but makes sense upon consideration. Th
 
 The other three graphs occupy geometric vector spaces. As more vertices fill the graph, the vector space becomes increasingly saturated, and more spatial distance must be traversed in order for the spanning tree to visit every vertex. Because the 2d, 3d, and 4d graphs have different spatial volumes, it makes sense that the average MST weights are ordered smallest to largest. Because infinite points can exist in an n-dimensional vector space, it's logical that the limit MST weight also approaches infinity.
 
-### How long does it take your algorithm to run? Does this make sense? Do you notice things like the cache size of your computer having an effect.
+### How long does it take your algorithm to run? Does this make sense? Do you notice things like the cache size of your computer having an effect?
 
-This [CSV](/file_io/report.csv) has full timings. A complete graph has `n(n - 1) / 2` edges, which grows huge as input scales. For graphs as large as those tested, high runtimes are unsurprising. Across trials, I noticed that "0d" generation took extra time because it required random number generation per edge (rather than per vertex). 
+This [CSV](file_io/results.csv) has full timings, as does the Google Sheet linked above. A complete graph has `n(n - 1) / 2` edges, which grows quickly as input scales. For graphs as large as those tested, high runtimes are unsurprising. Across trials, I noticed in the flamegraphs that "0d" generation took extra time because it required random number generation per edge rather than per vertex. 
 
-On my laptop, this program is definitely memory bound, and I absolutely noticed that affect on runtime. On larger trials, RAM becomes saturated, and the OS begins swapping pages in and out of disk. I can see it in Activity Monitor, and it has a huge impact on runtime.
+On my laptop, this program is definitely memory bound. On larger trials, RAM becomes saturated, and the OS begins swapping pages to and from disk. I can see it in Activity Monitor, and it has a huge impact on runtime.
 
 ### Reflections:
 
@@ -48,7 +48,7 @@ Here are some of my different milestones and what I learned along the way:
 - I started by building [PrimHeap](src/prim_heap.rs). Optimizing for `upsert_min` required more complex code and a hashmap supporting the heap vector, but it turned out well.
 - I had initially written separate graph generation functions for different dimensions. I eventually used traits and generics to arrive at the single graph generator in [graph_gen](src/graph_gen.rs).
 - With graphs and a heap, [Prim’s algorithm](src/mst.rs) was straightforward. It's well tested, and I’m confident of correctness on untrimmed graphs.
-- At that point, I thought I was done. I added the [CLI parser](src/cli.rs) with handlers in [main](src/main.rs) and let it run overnight. By morning, my program was still working on 32k for dimension zero.
-- I thought the issue was code performance, so I identified a bottleneck in graph generation and optimized it. Notes and flamegraphs can be found in [perf](perf). Focusing mostly on graph generation, I brought single-threaded runtimes down by 40 to 80 percent depending on graph dimension. With this, a single threaded run hit 32k vertices pretty comfortably but seemed to have a sharp growth trajectory.
+- At that point, I thought I was done. I added the [CLI parser](src/cli.rs) with handlers in [main](src/main.rs) and let it run overnight. By morning, my program was still working on 32k for d0.
+- I thought the issue was granular performance, so I identified a bottleneck in graph generation and optimized it. Notes and flamegraphs can be found in [perf](perf). Focusing mostly on graph generation, I brought single-threaded runtimes down by 40 to 80 percent depending on graph dimension. With this, a single threaded run hit 32k vertices pretty comfortably but seemed to have a sharp growth trajectory.
 - Running five trials without shared state is a huge invitation to parallelize, so I added threading for concurrent trials. This made 16k even faster, but running 5 threads at 32k caused my OS to kill the process within a minute due to excessive resource usage. On single threaded attempts, the program was now very-visibly memory bound. 
-- After experimenting and eventually rereading the assignment, I decided to try trimming. Trimming everything by 50 percent didn’t help much. I added a test function to generate maximum MST edge weights and used Google Sheets to determine a reasonable trend line. The power series model did best. I used those new trim factors to produce my results. More on this under the "Correctness, Runtime, and Results" header.
+- After experimenting and eventually rereading the assignment, I decided to try trimming. Trimming everything by 50 percent didn’t help much. I added a test function to generate maximum MST edge weights and used Google Sheets to determine a reasonable trend line. The power series model did best. I used those new trim factors to produce my results. More on this under the "Correctness, Runtime, and Results" heading.
