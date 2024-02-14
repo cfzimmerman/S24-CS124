@@ -1,8 +1,9 @@
 .PHONY: randmst
 .PHONY: test 
 
+# Normal rust installations should just use Cargo. This is for the grading server
 randmst: 
-	cargo build --release && cp ./target/release/progset1 ./randmst
+	${HOME}/.cargo/bin/cargo build --release && cp ./target/release/progset1 ./randmst
 
 test:
-	cargo test --release
+	${HOME}/.cargo/bin/cargo test --release
