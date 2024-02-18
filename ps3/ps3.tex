@@ -314,6 +314,61 @@ We maintain a subset $S$ at every time step, and upon seeing an update in $G$, w
     Give an $O(n \log k)$
 algorithm to merge $k$ sorted lists with $n$ total elements into one
 sorted list.
+\begin{quote}
+  \color{purple}
+  Note: My solution assumes (1) all of the $k$ input lists are non-empty and (2) the lists are linked lists with $O(1)$ cost to push and pop at the head and tail. 
+  
+  \medskip
+  Consider this algorithm: Given a list of linked lists, first initialize pointers for the output head and tail. Create a sentinel node at the head with value $-\infty$ and point the tail to it. Also initialize a min heap for linked list nodes keyed by node value. Then, for each input linked list, push the head onto the heap. (Note: this could also use \code{heapify}, but it doesn't change asymptotic runtime). Finally, while the heap is not empty, pop a node, push its child back onto the heap if a child exists, set the popped node's child to empty, set the tail's next node to the popped node, and progress the tail pointer to the popped node that was just added. At the end, return the node after the sentinel. Pseudocode for this algorithm: 
+
+  \begin{verbatim}
+fn merge_sorted_lists(lists: List of Lists) -> List:
+    let head = sentinel node(val = -inf, child = none);
+    let tail = head;
+    
+    let heap = MinHeap of list nodes sorted by head node value;
+    for list_head in lists:
+        heap.push(list_head);
+    
+    while heap is not empty:
+        let node = heap.pop();
+        let child = node.next;
+        if child is not empty:
+            heap.push(child);
+        node.next = empty list;
+        tail.next = node;
+        tail = tail.next;
+
+    return head.next;
+  \end{verbatim}
+
+  \textbf{Correctness}: \\ 
+  Begin by establishing the following claim: After $0 \leq m < n$ iterations of the while loop, (1) every node in the result list is less than or equal to every node in any list in the heap, (2) every node in the result list beginning at \code{head} is sorted, and (3) the length of the result list is $m + 1$. Prove by induction:
+  \begin{itemize}
+    \item Base case: At iteration $m = 0$, \code{head} has not been modified. The sentinel's value is $-\infty$, which is less than every node in every list in the heap. A list of length $1$ is trivially sorted, and the list has length $m + 1 = 0 + 1 = 1$. This establishes the base case.
+    \item Inductive hypothesis: Assume after $0 \leq m < n$ iterations of the while loop, the claim holds. 
+    \item Inductive step: At the $m + 1$ iteration of the while loop, the \texttt{next} entry is popped from the heap, made childless, and added to the result list. If it exists, the child \code{next} is added back to the heap such that only one total node is removed from the combined lists of the heap. Each input list is sorted, so the $k$ values used as keys in the heap are the least values of their lists. Because it's a min heap, the least of all these values is at the top of the heap, implying that popping it removes the least value among all nodes of all lists in the min heap. When this is popped and added to the result list, it is now less than or equal to every node remaining in any list in the heap. This proves point (1). Because the popped node was in the heap at time $m$, assert by the inductive hypothesis that it was greater than every node in the result list. Consequently, because the result list was sorted least to greatest, when the popped node is added to the end of the result list, the result list remains in sorted least to greatest order with this new greatest node at the end. This proves point (2). By the inductive hypothesis, the size of the result list at step $m$ was $m + 1$. Adding this new node yields a result list of size $(m + 1) + 1$, which proves point (3). The inductive step is thus established, and, by induction, the claim must be true. 
+  \end{itemize}
+
+  \medskip
+  Applying the proof above, after the while loop has executed $n$ times, the result list will be sorted and of length $n + 1$. Removing the $-\infty$ sentinel node yields the $n$ input values still sorted least to greatest. So, if a sorted order of $n$ input values exists, the algorithm returns it.
+
+  \medskip
+  The only thing this algorithm returns is the linked list beginning after head. by the induction proof above, such a list is a length-$n$ list composed of the input elements in sorted order. So, the only thing the algorithm returns is a length-$n$ sorting of the input elements. 
+
+  \medskip
+  By these two cases, the algorithm must be correct.
+
+  \textbf{Runtime}: \\ 
+  Initializing the linked list takes $O(1)$ time. Assuming the input lists are not empty, the time to iterate all input lists is bounded by the number of nodes in all lists, $n$. Each list requires one insertion into the heap, and the heap only ever has one entry for each of the $k$ lists. So, each insertion into the heap requires time $O(\log k)$. This yields an initialization complexity of $O(n \log k)$. Using heapify under the same assumptions would take $O(n)$, but it doesn't reduce overall runtime. 
+
+  \medskip
+  Then, because one node is removed from one of the non-empty lists at each iteration of the \code{while} loop, the \code{while} loop iterates at most $n$ times. For each iteration, a heap \code{pop} and \code{push} occur. Because the heap contains at most one entry for each of the $k$ input lists, the heap never exceeds size $k$. This gives \code{push} and \code{pop} a cost of $O(\log k)$ time, resulting in a \code{while} loop complexity of $O(n \log k)$. 
+
+  \medskip
+  Thus, the total complexity of this algorithm is $O(n \log k)$.
+  
+\end{quote}
     \item {\bf (12 points)}
 Say that a list of numbers is $k$-close to
 sorted if each number in the list is less than $k$ positions from its
