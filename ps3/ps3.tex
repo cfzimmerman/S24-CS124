@@ -26,6 +26,7 @@
 \renewcommand{\vec}[1]{{\mathbf #1}}
 \newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
 \newcommand{\mmod}[1]{\ (\mathrm{mod}\ #1)}
+\newcommand{\code}[1]{$\texttt{#1}$}
 
 
 \setlength{\parskip}{\medskipamount}
@@ -147,7 +148,7 @@ fn max_ind_set(adj: adjacency list graph) -> Set(vertices):
 
     \medskip
     \textbf{Runtime}: \\ 
-    The algorithm iterates every vertex and every edge in the graph, so it runs in time $O(V + E)$.
+    The algorithm iterates every vertex and every edge in the graph, so it runs in time $O(V + E)$. That assumes the input adjacency list is encoded as a HashMap with key vertex and value HashSet of neighbor vertices. I further assume insertion and deletion on those data structures take an average of $O(1)$ time.
     \end{quote}
 \end{enumerate}
 
@@ -156,7 +157,56 @@ Now suppose the graph $G$ is changing over time, and we want to maintain a maxim
 \begin{enumerate}[resume]
     \item {\bf (0 points, not to be turned in)} Prove that the adjacency lists can be maintained with $O(\Delta)$ cost per insertion and deletion. (You may assume you have a solution to this problem in future parts even if you did not solve it.)
     \item {\bf (7 points)} Describe algorithms INSERT$(e)$ and DELETE$(e)$ to maintain $S$ under edge insertions and deletions respectively. Give upper bounds on the runtime of both operations. \label{part:2c} (Your algorithm and its claimed run times must be correct, but you need not prove these. Note that for full credit your runtimes should depend only on $\Delta$ and not on $n$.)
+    \begin{quote}
+      \color{purple}
+      Note: While it's not stated in the prompt, I'm assuming my methods have read access to the graph. 
+
+      \medskip 
+      Consider these three functions:
+      \begin{itemize}
+        \item \code{add\_if\_able}: Accepts a vertex \code{v}. If no neighbors of \code{v} are in \code{S}, then add \code{v} to \code{S}.
+        \item \code{insert}: Accepts an edge between vertices \code{v1} and \code{v2}. If both of the vertices are in \code{S}, then remove \code{v1} from \code{S} and call \code{add\_if\_able} on all of neighbors of \code{v1}.
+        \item \code{delete}: Accepts an edge between vertices \code{v1} and \code{v2}. If exactly one of the edge endpoints is in \code{S}, call \code{add\_if\_able} on the vertex not in \code{S}.
+      \end{itemize}
+      Here's pseudocode for these algorithms:
+      \newpage
+\begin{verbatim}
+DynamicMaximalIndSet {
+    Independent set tracker S;
+
+    fn add_if_able(v: Vertex, graph: &Graph):
+        for neighbor in graph[v]:
+            if S[neighbor] == 1:
+                return
+        S[v] = 1;
+
+    fn insert((v1, v2): edge, graph: &Graph):
+        if S[v1] != 1 or S[v2] != 1:
+            return;
+        S[v1] = 0;
+        for neighbor in graph[v1]:
+            add_if_able(neighbor, graph);
+
+    fn delete((v1, v2): edge, graph: &Graph):
+        if S[v1] == 0 and S[v2] == 0:
+            return;
+        Assert S[v1] and S[v2] are not both 1;
+        let v = the side of the edge not in S;
+        add_if_able(v, graph);
+}
+\end{verbatim}
+    While proofs are not required, here's my reasoning for each along with runtime:
+    \begin{itemize}
+      \item \code{add\_if\_able}: If a vertex has no edges to vertices in the independent set, then it can be added to the independent set. This iterates the edges of a vertex. If each vertex has $O(\Delta)$ edges, then this takes $O(\Delta)$ time.
+      \item \code{insert}: If the new edge is between two vertices not in \code{S}, both of those vertices must already have some neighbor in S preventing them from joining S. This requires no updates. Similarly, if one of the vertices is in \code{S}, then the other edge has yet another reason it cannot be in \code{S}. That case should also be igored. If both vertices are already in \code{S}, then one of them must be removed to maintain the independent set property. I arbitrarily chose \code{v1}. Removing \code{v1} might enable any of its neighbors to now join \code{S}, so they must be considered. However, either they cannot join because of a different neighbor in \code{S}, or they can join, giving all their neighbors yet another neighbor in \code{S}. Because of that, only one degree of separation from the initially-removed vertex must be considered. Considering all the neighbors of all the neighbors of the removed vertex takes time $O(\Delta^2)$.
+      \item \code{delete}: If an edge is deleted between two vertices not in \code{S}, then both vertices still must have some neighbor in \code{S} preventing them from joining \code{S}. This implies no change. Simiarly, it should be impossible to delete an edge between two vertices in \code{S} because of the independent set property. Finally, if only one of the vertices is in \code{S}, the vertex not in \code{S} might now be able to join \code{S}. Checking this gives the function a total runtime of $O(\Delta)$.
+    \end{itemize}
+    \end{quote}
     \item {\bf (3 points)} For every integer $\Delta>0$  describe an example (i.e., a graph, an MIS, and an edge to be inserted) such that the number of queries to $S$ for inserting an edge asymptotically match your upper bound from Part~\ref{part:2c}. 
+      \begin{quote}
+        \color{purple}
+        Let $G$ be a complete graph with $n$ vertices. By definition, every vertex has $n - 1$ edges, so $\Delta$ is $n - 1$. Because it's a complete graph, only one vertex $v_0$ will initially be in $S$. Choose another vertex $v_k$ in the graph and remove its edge with $v_0$. Because $v_0$ was the only vertex in $S$, $v_k$ will now also be added to $S$. Now, re-insert that edge. Doing so will cause $v_0$ to be removed from the graph. Then, for each of $v_0$'s neighbors $v_{nb}$, each of the $v_{nb}$'s neighbors will be inspected to see if $v_{nb}$ can be added to the graph. Because the graph is complete, this will result in $(n - 1) * (n - 1)$ loop iterations, which will have $\Theta(\Delta^2)$ runtime. Allowing any $n > 1$ will demonstrate this behavior for any integer $\Delta > 0$. 
+      \end{quote}
 \end{enumerate}
 
 To speed up the runtimes from Part~\ref{part:2c}, suppose we decide to additionally maintain 
@@ -164,7 +214,77 @@ an array $A$ indexed by $V$, such that for every $u\in V$, $A[u]$ counts the num
 
 \begin{enumerate}[resume]
     \item {\bf (5 points)} Give algorithms A-INSERT and A-DELETE that maintains both $S$ and $A$ under edge insertions and deletions. (While any correct polynomial-time algorithm will get you full points, needlessly inefficient algorithms will lose points in the next part!)
+    \begin{quote}
+      \color{purple}
+      Consider this set of algorithms: 
+      \begin{itemize}
+        \item \code{add\_if\_able}: Given a vertex \code{v}, if \code{A[v]} is greater than zero, return. Else, add \code{v} to \code{S} and, for each \code{neighbor} of \code{v}, increment \code{A[neighbor]} by one.
+        \item \code{insert}: Given an edge between \code{v1} and \code{v2}, if neither vertex is in \code{S}, return. If exactly one of the vertices \code{v} is in \code{S}, then increment \code{A[v]} by one and return. Else, remove \code{v1} from \code{S}, set \code{A[v1]} to one, and, for each neighbor of \code{v1} except \code{v2}, decrement \code{A[neighbor]} by one and call \code{add\_if\_able} on that \code{neighbor}.
+        \item \code{delete}: Given an edge between \code{v1} and \code{v2}, if neither edge is in \code{S}, return. Assert that the vertices are not both in \code{S}. Let \code{v} be the side of the deleted edge not in \code{S}. Decrement \code{A[v]} by one and call \code{add\_if\_able} on \code{v}.
+      \end{itemize}
+      Pseudocode for this algorithm: 
+      \newpage
+    \begin{verbatim}
+ADynamicMaximalIndSet {
+    Independent set tracker S;
+    Neighbor count tracker A;
+
+    fn add_if_able(v: Vertex, graph: &Graph):
+        if A[v] > 0:
+            return;
+        S[v] = 1;
+        for neighbor in graph[v]:
+            A[neighbor] += 1;
+
+    fn insert((v1, v2): edge, graph: &Graph):
+        if S[v1] == 0 and S[v2] == 0:
+            return;
+        if S[v1] == 0 or S[v2] == 0:
+            let v = the side of the edge not in S;
+            A[v] += 1;
+            return;
+
+        S[v1] = 0;
+        A[v1] = 1;
+        for neighbor in graph[v1] excluding v2:
+            A[neighbor] -= 1;
+            add_if_able(neighbor, graph);
+
+    fn delete((v1, v2): edge, graph: &Graph):
+        if S[v1] == 0 and S[v2] == 0:
+            return;
+        Assert S[v1] and S[v2] are not both 1;
+        let v = the side of the edge not in S;
+        A[v] -= 1;
+        add_if_able(v, graph);
+}
+    \end{verbatim}
+
+    Justification for each method: 
+    \begin{itemize}
+      \item \code{add\_if\_able}: If \code{v} has any neighbors in \code{S}, then it does not belong in \code{S} by definition of independent set. Otherwise, it should be added. After it's added, all of its neighbors' \code{A} counts must be updated to reflect that \code{v} is now in \code{S}.
+      \item \code{insert}: If neither \code{v1} nor \code{v2} is in \code{S}, then no trackers need to be updated. If exactly one vertex in the edge is in \code{S}, then the side not in \code{S} should be updated to reflect its additional edge with a vertex in \code{S}. Otherwise, if both vertices are in \code{S}, then arbitrarily choose \code{v1} to be dropped. Doing so implies that \code{v1} now has one edge into \code{S} with \code{v2} and no others because it was previously in the independent set. Each non-\code{v2} neighbor of \code{v1} just lost an edge into \code{S} and should be decremented and reconsidered for membership in \code{S}. 
+      \item \code{delete}: This is almost identical to before except the vertex not in \code{S} now has its count into \code{S} decremented due to the edge deletion.
+    \end{itemize}
+      
+    \end{quote}
     \item {\bf (10 points)} Assume that initially the graph $G$ is empty (no edges), and $S$ consists of all vertices in $V$. Give an amortized analysis proof that after $T$ updates to $G$, the total runtime of the operations is at most $O(\Delta\cdot T)$. (Hint: Consider a charging scheme that charges the runtime of adding a vertex to $S$ to the vertex itself. You should be careful to pay this charge when the same vertex is deleted from $S$!)
+      \begin{quote}
+        \color{purple}
+        Let there be two types of events:
+        \begin{itemize}
+          \item Type 1: A vertex is added to S. 
+          \item Type 2: A vertex is removed from S. 
+        \end{itemize}
+        Consider an amortization scheme where the cost of a Type 1 action is completely paid by a Type 2 action on the same vertex. Analyze each method in the data structure for its complexity:
+        \begin{itemize}
+          \item \code{add\_if\_able}: The first case is $O(1)$. Otherwise, in the worst case, this function runs in $O(\Delta)$ to update every neighbor of a vertex added to $S$. Because this only happens during a Type 1 event, defer all of this $O(\Delta)$ cost to the Type 2 action removing the same vertex from $S$. Doing so allows \code{add\_if\_able} to run in charged $O(1)$ time. 
+          \item \code{insert}: The first two cases are $O(1)$. Otherwise, if both vertices are in \code{S}, then \code{v1} must be removed from \code{S}. The Type 2 update itself is $O(1)$, but it also incurs the deferred Type 1 cost of $O(\Delta)$, which is now paid off. Then, for every neighbor of \code{v1}, perform an $O(1)$ update to \code{A} and call \code{add\_if\_able}. Under the charging scheme, \code{add\_if\_able} costs a charged $O(1)$ time, and calling that on every neighbor costs $O(\Delta)$. Thus, \code{insert} costs at most $O(\Delta)$.
+          \item \code{delete}: The first case is $O(1)$. Otherwise, an $O(1)$ update is made followed by \code{add\_if\_able}. By the charging argument, \code{add\_if\_able} costs $O(1)$ now, so \code{delete}'s charged cost is $O(1)$. 
+        \end{itemize}
+
+        The graph starts out with every vertex in \code{S}, so initial operations can only cause constant-time cases or vertices to be deleted from $S$. That implies paying for insertions that were never charged, which balances out later insertions that are never paid for through deletion. Otherwise, for every insertion that's eventually deleted, there's a charged cost of $O(\Delta)$ and a paid cost of $O(\Delta)$. Because the number of possible insertions and deletions bound each other, this yields a final cost across $T$ operations of $O(T \cdot \Delta)$ time.
+      \end{quote}
 \end{enumerate}
 
 \iffalse{ 
