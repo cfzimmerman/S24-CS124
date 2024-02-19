@@ -376,6 +376,48 @@ actual place in the sorted order.  (Hence, a list that is 1-close to
 sorted is actually sorted.)  Give an $O(n \log k)$ algorithm for
 sorting a list of $n$ numbers that is $k$-close to sorted.
 \end{enumerate}
+\begin{quote}
+  \color{purple}
+  Consider this algorithm: given a list \code{nums} of $k$-close sorted numbers and an integer $k$, initialize a min heap and a \code{result} list. Fill the heap with the first $k$ numbers in the input list (or the entire input list if $k$ exceeds $n$). Then, while the heap is not empty, if there's a next number from the input, add it to the heap. After that, pop the min value from the heap and push the popped value to \code{result}. At the end, return the \code{result} array. Pseudocode for this algorithm: 
+  \newpage
+  \begin{verbatim}
+fn k_close_sorted(nums: List(int), k: int) -> List(number):
+    let heap = MinHeap(number);
+    let index = 0;
+    while index < k and index < nums.len():
+        heap.push(nums[index]);
+        index += 1;
+
+    let result = [];
+    while heap is not empty:
+        if index < nums.len():
+            heap.push(nums[index]);
+            index += 1;
+        result.push(heap.pop());
+    return result;
+  \end{verbatim}
+
+  \medskip
+  \textbf{Correctness}: \\ 
+  Begin by establishing the following claim inductively: In the second while loop, when \code{result.len() == a} for some $0 \leq a \leq n$, (1) the entry belonging at position $a$ in the array is initially in the heap and (2) the elements in the \code{result} array are sorted.
+  \begin{itemize}
+    \item Base case: Before the first push to the result array, the initial \code{while} loop added the first $k$ elements of \code{nums} to the heap or the entire array, whichever is less. The \code{if} condition also adds another element if able. Thus, the first $k + 1$ elements of the $k$-close sorted input list are in the heap. The definition of $k$-close requires that one of these values must be the first element in the correct sorted order, which validates point (1). The least of these is popped from the heap and added to the \code{result} array. Because it is one element, the \code{result} array is trivially sorted. 
+    \item Inductive hypothesis: The claim holds for all $0 \leq a < n$.
+    \item Inductive step: When there are some $a$ elements already in the \code{result} array, there are $k$ elements in the heap within $k$ of the $a + 1$ element. The \code{if} condition adds the next element to the heap as well, meaning that the heap now contains the $k + 1$ closest elements to index $a + 1$ or every remaining unsorted element from the input list, whichever is less. This validates point (1) because the entry belonging at index $a + 1$ now must be in the heap. The minimum among these is chosen from the heap and put at a location $a + 1$ in \code{result}. If this value were in the heap at iteration $a$, then it must be greater than or equal to the value at $a$ because it wasn't popped from the heap. If it were just added, it must be greater than $a$ because it was more than $k$ spaces from $a$. In either case, this newly pushed value must be greater than or equal to $a$. By the inductive hypothesis, the result array was already sorted least to greatest. Because this new value is in correct sorted order with the value at $a$, the list is still in sorted order. This proves the inductive step and validates the claim by induction. 
+  \end{itemize}
+
+      \medskip
+      Preceding the second \code{while} loop, the first \code{while} loop ensures the heap carries the first $k$ elements of the array or the entire array, making the inductive proof above applicable. Thus, once $a = n$, the heap will be empty and all $n$ elements in the result array will be in sorted order. This implies that if a correct sorting exists from the input $k$-sorted list, it is returned. 
+
+      \medskip
+      Because the second \code{while} loop always chooses the minimum value from the heap and the heap is guaranteed to contain the value belonging at index $a$, the result array constructed by the algorithm will always produce a correct sorting. So, when the result array is returned from the algorithm, it must be a correct sorting.
+
+  \textbf{Runtime}: \\ 
+  Initializing the heap and \code{result} list takes constant time. Because the heap only ever contains at most $k + 1$ elements, pushing and popping from the heap takes $O(\log k)$ time. Pushing the first $k$ elements would normally require $O(k \log k)$ time. However, because the \code{while} loop exits early if $k$ exceeds $n$, this step more accurately takes $O(n \log k)$ steps.  
+
+  \medskip
+  The second \code{while} loop includes some constant time work and two $O(\log k)$ operations on the heap. Because this loop executes once for each of the $n$ elements belonging in the \code{result} list, this loop takes a total of $O(n \log k)$ time. In total, the algorithm runs in $O(n \log k)$ time.
+\end{quote}
 
 \item 
 {\bf $d$-heaps (0 points, optional)}\footnote{We won't use this question for grades. Try it if you're interested. 
