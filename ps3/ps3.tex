@@ -477,6 +477,62 @@ You are secretly Gossip Girl, an anonymous gossip blogger who keeps track of fri
 \begin{enumerate}
 \item {\bf (5 points)}
     You call some groups of people a ``squad'': each person is in the same squad as all their friends, and every member of a squad has some chain of friendships to every other member. For example, if Dan is friends with Serena, Serena is friends with Blair, and Alice is friends with Donald, then Dan, Serena, and Blair are a squad (You make up the name ``The Gossip Girl Fan Club'') and Alice and Donald are another squad (``The Constance Constants''). Give an algorithm that takes in a stream of (a) tips and (b) requests for a specified person's squad name. You should answer requests that come in between tips consistently---if you make up the name ``The Billard billiards players'' for Dan's squad, and you're asked for Serena's squad's name before any new tips come in, you should report that it's ``The Billard billiards players''.
+    \begin{quote}
+      \color{purple}
+
+In this question, assume friendships are permanent. There's no mention of an unfriend event, it simplifies the algorithm, and it makes everyone's life better. Assume it's fine to name a squad by some member of the squad. This naming will consistently identify squads by the person at the root of their union find tree. So, if $B$'s squad is merged with $A$'s squad and $A$ becomes the squad tree root, now $B$ is in $A$'s squad. The loss of $B$'s squad name is inevitable anyway.
+
+\medskip
+Consider a data structure holding a set of people, initially empty, and a union find data structure called \code{squads}. For friendship events, have a method \code{add\_friendship} that takes two names, $A$ and $B$. If $A$ or $B$ isn't yet in the set, add them. Then, call \code{make\_set} to add them to \code{squads}. Finally, run \code{squads.union(A, B)}. For queries on a person $A$, call \code{squads.find(A)} and return the name of the root person as the name of the squad. Pseudocode:
+\begin{verbatim}
+SquadTracker {
+    let squads = UnionFind data structure;
+    let tracked_people = Set of names, initially empty;
+
+    pub fn process_stream(event: Request) -> Response:
+        return match event 
+            "A is now friends with B" => add_friendship(A, B),
+            "request squad name for A" => get_squad(A)
+
+    private fn add_friendship(A: Person, B: Person):
+        for person in A and B:
+            if person is not in tracked_people:
+                tracked_people.add(person);
+                squads.make_set(person);
+        squads.union(A, B);
+    
+    private fn get_squad(A: person) -> SquadName:
+        let person_at_root = squads.find(A);
+        return "{person_at_root}'s squad";
+}
+\end{verbatim}
+
+\medskip 
+\textbf{Correctness}: \\ 
+First, prove by induction that every person in a squad is encoded in a single union find tree. (UnionFind holds a forest of such trees). Do so by induction on the number of calls made to \code{add\_friendship}. 
+
+\begin{itemize}
+  \item Base case: Given people $A_1$ and $B_1$ for the first call to \code{add\_friendship}, $A_1$ and $B_1$ are added to \code{tracked\_people} and \code{squads}. Then, they're joined into a single squad. Because these are the only two people on the graph and they're correctly expressed as a squad, every squad is encoded as a single union find tree. 
+  \item Inductive hypothesis: After $0 \leq k \leq m$ calls to \code{add\_friendship}, assume every person in a squad is encoded in a single UnionFind tree, where UnionFind holds a forest of such trees. 
+  \item Inductive step: At the $m + 1$ call, if $A_{m + 1}$ and $B_{m + 1}$ are new people, the same logic as the base case applies and the rest of the graph will still be correct by the inductive hypothesis, making that case valid. If $A_{m + 1}$ or $B_{m + 1}$ is new and the other is already in the graph, only the new member will be created via \code{make\_set} because the other will already be in \code{tracked\_people}. If one person is already in the graph, they already have a friendship. So, the rank of the root of the squad tree of that user will be greater than $1$, meaning that the new person will be added by union into the squad tree of the existing member. By the inductive hypothesis, every squad was correctly encoded before. Now, the squad of the already-present user just grew by one. Because that's the only squad the new user is a member of, this is a correct encoding of squads after the $m + 1$ event. If both $A$ and $B$ already exist in the graph, both will already be a part of squad trees. Internally,  the UnionFind structure will determine the greatest root and reparent the lesser squad into the greater squad. Because of the friendship between $A$ and $B$, their squads will now be a single squad. Due to this union, all members of this new squad will identify by the shared root of their tree. Because this squad is now properly encoded as a single UnionFind tree and all other trees are untouched and already correct by the inductive hypothesis, this must leave a valid encoding after $m + 1$ events. This proves the inductive step and the claim by induction.
+\end{itemize}
+
+After $m$ calls to \code{add\_friendship}, the proof above implies that squads now properly encodes the friend structure of the graph. So, if \code{add\_friendship} is called, it makes a valid mutation to the friendship graph. And if \code{add\_friendship} makes a mutation to the friendship graph, it only does so to encode a new piece of information. Because of this, \code{add\_friendship} must be a correct handler for new friendship events.
+
+\medskip
+Retrieving a squad name: Assert from the proof above that squads properly encodes the given friendships such that every member of a squad is in the same UnionFind tree. Thus, given a person $A$, \code{get\_squad} will find $A$'s squad tree and return the root of that tree as the squad name. Because every member of the union find tree will report the root of their tree as the squad name, every member of a squad will report being in the same squad. So, if person $A$ is in the graph, $A$'s squad will be correctly reported. 
+
+\medskip
+If any squad membership is reported from \code{get\_squad}, it is the root of the tree parenting a squad that $A$ is in. By the proof above, $A$ must be in the same tree as every member of their squad. Thus, if anything is reported by \code{get\_squad(A)}, it is the root of the tree that $A$ is in, which is the name of $A$'s squad. Because of this, \code{get\_squad} must be correct.
+
+\medskip
+Through these two handlers, the data structure correctly processes queries.
+
+\medskip 
+\textbf{Runtime}: \\ 
+An \code{add\_friendship} event requires up to two set \code{get} and \code{add} operations on a set, which are all constant time. There may also be two calls to \code{make\_set} and one call to \code{union}. A single call to \code{get\_squad} makes one \code{find} request on the UnionFind structure. Thus, each operation performs a constant amount of work and makes a constant number of calls to UnionFind methods. So, if there are $n$ people and $m$ events in the stream, the total runtime guaranteed by the UnionFind data structure will be $O(m \log^*n)$.
+      
+    \end{quote}
 \item {\bf (10 points)}
     A ``circular squad'' is defined to be a squad such that there is some pair of friends within the group that have both a friendship and a chain of friendships of length more than 1. In the example above, if Dan and Blair also became friends, then the group would be a circular squad. If Dan and Donald also became friends, they would all be in one circular squad. Modify your algorithm from the previous part so that you report names that contain the word ``circle'' for all circular squads (and not for any other squads).
 \end{enumerate}
