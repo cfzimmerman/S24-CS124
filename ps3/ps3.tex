@@ -445,6 +445,29 @@ this is the sort of thing we're looking for.)  Explain briefly how to
 generalize your construction for other (constant) values of $k$.  (You
 need not give a complete proof of your generalization, but explain the
 types of changes needed from the case of $k=3$.)
+\begin{quote}
+  \color{purple}
+Consider two colors of sets. Red sets are an optimal $k = 3$ decision, and blue sets are what the greedy algorithm chooses. These colors are also used in the pictures on the next page.
+
+\medskip
+Given an input collection of $n$ elements, create three red sets with $\frac{n}{3}$ elements partitioning the $n$ input elements. Divide remainders such that the difference between the largest and smallest of these sets is at most $1$.
+
+\medskip
+Use this recursive procedure to construct the blue sets: Given some nonzero $n$ elements that are not yet in a blue set, create a new blue set consisting of $ceil(\frac{n}{2})$ elements. Select these equally from the elements in red sets such that the difference between the most and least elements selected from a single red set is one. If all elements are now also in blue sets, exit. Otherwise, recursively continue this process on the $floor(\frac{n}{2})$ elements remaining outside of a blue set until every element is also in a blue set.
+
+\medskip
+Assume this construction is applied to any large enough $n$, for example $n \geq 12$. For every grouping of this form, there is an optimal set cover of size $3$ identified by the red sets. However, the first decision of the greedy algorithm never chooses a red set because the first blue set has $ceil(\frac{n}{2}) > ceil(\frac{n}{3})$ elements. Because blue elements are allocated equally from among the red sets, as $n$ is recursively halved, this same decision is continually made until a set cover is produced of almost all blue sets. The last set may be either red or blue because it only needs to cover one element, but that doesn't affect the total set count. 
+
+\medskip
+The construction of blue sets halves $n$ at each iteration, producing $\log n$ blue sets. Because the greedy algorithm chooses only blue sets until a single element remains, the greedy algorithm will always choose at least $\log n$ sets. Thus, $b = \Omega(\log n)$.
+
+\medskip
+In the example graphs below, here's the decision process for $n = 12$: An optimal algorithm will choose the three red sets of size $4$. However, the greedy algorithm will begin by choosing the blue set of size $6$. After that, each red set would add $2$ new elements. But there's a blue set covering $3$ new elements, so that's added instead. Now, each red set adds only $1$ new element. The blue set with $2$ new elements is selected instead. Finally, the last element could be covered by either the single blue set or the top red set. Regardless, this leaves a greedy selection of size 4 when an optimal selection would only require 3 sets. (Examples on next page)
+
+\hspace*{-8em}
+\includegraphics[scale=0.45]{./pics/q4_sets.png}
+\medskip
+\end{quote}
 
 
 \item {\bf Tracking components in an evolving graph (15 points)}
