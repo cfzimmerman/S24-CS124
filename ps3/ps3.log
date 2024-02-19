@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  19 FEB 2024 15:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  19 FEB 2024 17:42
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -528,7 +528,32 @@ Overfull \hbox (2.36739pt too wide) in paragraph at lines 486--487
 method $[]$
  []
 
-[15] [16] [17] (./ps3.aux) ) 
+[15] [16] [17] [18]
+Overfull \hbox (32.05983pt too wide) in paragraph at lines 613--615
+[]\T1/futs/m/n/10.95 Prove the cor-rect-ness of $[]$ by in-duc-tion on num-ber 
+of calls to $[]$.
+ []
+
+
+Overfull \hbox (23.36414pt too wide) in paragraph at lines 615--616
+\T1/futs/m/n/10.95 and there is no pos-si-bil-ity of $\FML/futmi/m/it/10.95 A$ 
+\T1/futs/m/n/10.95 and $\FML/futmi/m/it/10.95 B$ \T1/futs/m/n/10.95 al-ready be
+-ing in the same tree. So, $[]$
+ []
+
+[19]
+Overfull \hbox (18.25038pt too wide) in paragraph at lines 626--628
+\T1/futs/m/n/10.95 In-tro-duc-ing the $[]$ set doesn't in-crease run-time. As-s
+um-ing query-ing the $[]$
+ []
+
+
+Overfull \hbox (47.82336pt too wide) in paragraph at lines 626--628
+\T1/futs/m/n/10.95 plex-ity of $[]$ has not changed. There are now four more se
+t op-er-a-tions in $[]$
+ []
+
+[20] (./ps3.aux) ) 
 Here is how much of TeX's memory you used:
  5136 strings out of 476025
  78550 string characters out of 5790017
@@ -537,18 +562,17 @@ Here is how much of TeX's memory you used:
  574010 words of font info for 106 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  62i,8n,67p,1656b,528s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2023/texmf-dist/fonts/type1/pub
-lic/fourier/fourier-ml.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/publ
-ic/fourier/fourier-ms.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/publi
-c/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/a
-dobe/utopia/putb8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/ut
-opia/putr8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/pu
-tri8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt1
-095.pfb>
-Output written on ps3.pdf (17 pages, 405127 bytes).
+</usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourie
+r/fourier-ml.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier
+/fourier-ms.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts
+/symbols/msbm10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopi
+a/putb8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putr8
+a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putri8a.pfb>
+</usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb>
+Output written on ps3.pdf (20 pages, 414678 bytes).
 PDF statistics:
- 99 PDF objects out of 1000 (max. 8388607)
- 63 compressed objects within 1 object stream
+ 109 PDF objects out of 1000 (max. 8388607)
+ 70 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  6 words of extra memory for PDF output out of 10000 (max. 10000000)
 

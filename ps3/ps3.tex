@@ -536,6 +536,96 @@ An \code{add\_friendship} event requires up to two set \code{get} and \code{add}
 \item {\bf (10 points)}
     A ``circular squad'' is defined to be a squad such that there is some pair of friends within the group that have both a friendship and a chain of friendships of length more than 1. In the example above, if Dan and Blair also became friends, then the group would be a circular squad. If Dan and Donald also became friends, they would all be in one circular squad. Modify your algorithm from the previous part so that you report names that contain the word ``circle'' for all circular squads (and not for any other squads).
 \end{enumerate}
+\begin{quote}
+  \color{purple}
+Assume for simplicity that no person is named "circle" and that the input stream of friendships never contains duplicates. For example, if the message "$A$ is now friends with $B$" is received, neither that exact message nor "$B$ is now friends with $A$" will ever be received again.
+
+\medskip
+Algorithm: Take the same data structure from part $(a)$ and modify it to track circular squads like this: First, add a new set in the data structure called \code{circulars}. It is a set of names tracking the tree roots of circular squads. Next, add a modification to \code{get\_squad} such that if the circulars set contains the person at the squad root, then "circle" is appended to the output. All other changes occur in the \code{add\_friendship} function.
+
+\medskip
+Before \code{squads.union(A, B)}, retrieve the initial squad root names for $A$ and $B$. If $A$ and $B$ already have the same root, then add their shared root to the \code{circulars} set. Otherwise, perform the union. If either of the original squads was circular, now propagate that to the new
+union squad. Pseudocode:
+
+\newpage
+\begin{verbatim}
+SquadTrackerWithCircles {
+    let squads = UnionFind data structure;
+    let tracked_people = Set of names, initially empty;
+    let circulars = Set of names, initially empty;
+
+    pub fn process_stream(event: Request) -> Response:
+        return match event 
+            "A is now friends with B" => add_friendship(A, B),
+            "request squad name for A" => get_squad(A)
+
+    private fn add_friendship(A: Person, B: Person):
+        for person in A and B:
+            if person is not in tracked_people:
+                tracked_people.add(person);
+                squads.make_set(person);
+        let squad_of_a = squads.find(A);
+        let squad_of_b = squads.find(B);
+        if squad_of_a == squad_of_b:
+            circulars.add(squad_of_a);
+            return;
+        squads.union(A, B);
+        if circulars.has(squad_of_a) or circulars.has(squad_of_b):
+            circulars.add(squads.find(A));
+    
+    private fn get_squad(A: person) -> SquadName:
+        let person_at_squad_root = squads.find(A);
+        if circulars.has(person_at_squad_root):
+            return "{person_at_squad_root}'s circle squad";
+        return "{person_at_squad_root}'s squad";
+}
+\end{verbatim}
+
+\medskip
+\textbf{Correctness}: \\
+Assert the correctness of squad tracking from the algorithm and proof in part $(a)$. Here, I will only prove the correctness of circular tracking such that if any person is in a circular squad, \code{get\_squad} will return "circle" in the squad name. Otherwise, it will not.
+
+\medskip
+Prove that there are only two ways for a squad to become circular:
+\begin{enumerate}
+  \item A new squad is created via union, and at least one of the child sets is circular. 
+  \item A friendship is added between two people who are already in the same squad. 
+\end{enumerate}
+
+Point $(a)$ is true by the given definition of a circular group. This leaves Point $(b)$.
+
+\medskip
+Assume for purposes of contradiction that a new friendship can be added between two people $A$ and $B$ already in the same non-circular squad such that the squad remains non-circular. If $A$ and $B$ are already in the same squad, there is a path from $A$ to $B$ through some other person. Because $A$ and $B$ weren't friends before, this path must be longer than $1$. So, there is now a direct friendship between $A$ and $B$, and there's a distinct chain of friendships longer than $1$ between $A$ and $B$. This definitionally implies that $A$ and $B$ are now in a circular squad, which contradicts the assumption. Thus, it must be the case that adding a friendship between two people already in the same squad must result in a circular squad.
+
+\medskip
+Next, prove that adding a friendship between two people in distinct noncircular squads cannot turn a squad circular. Assume the opposite for purposes of contradiction, that adding a friendship between two people $A$ and $B$ in distinct noncircular squads can turn a squad circular. If $A$ and $B$ begin in distinct squads, then there is no path between $A$ and $B$ other than the direct link from $A$ to $B$. Because the only path between $A$ and $B$ is of length $1$, this cannot create a circular squad. Neither of the squads was initially circular, so their union isn't either. This contradicts the assumption. Thus, it must be the case that adding a friendship between two people in distinct noncircular squads cannot turn a squad circular.
+
+\medskip
+Combining the arguments above, consider the effect of any new friendship:
+\begin{itemize}
+  \item If the friendship is between two distinct, non-circular squads, there is no way for the resulting union squad to be circular. 
+  \item If the friendship is between two distinct squads in which at least one is circular, the resulting union squad is circular. 
+  \item If the friendship is between two people already in the same squad, then the squad they are both in is now circular. 
+\end{itemize}
+Because these cases are exhaustive, if the data structure properly handles all these cases, it will always correctly mark the root of circular squads in the circular set and report circular squads when queried.
+
+\medskip
+Prove the correctness of \code{add\_friendship} by induction on number of calls to \code{add\_friendship}. This proof assumes the correctness of squad tracking from part $(a)$. Simultaneously prove the invariant that \code{circulars} never contains people not in circular squads.
+\begin{itemize}
+  \item Base case: Given the first friendship between $A$ and $B$, the \code{circulars} set is empty, and there is no possibility of $A$ and $B$ already being in the same tree.  So, \code{add\_friendship} just performs the union and exits.
+  \item Inductive hypothesis: \code{circulars} correctly holds the root of every circular squad after $0 \leq m$ calls to \code{add\_friendship}. Also, \code{circulars} does not contain any people not in circular squads. 
+  \item Inductive step: On the $m + 1$ call to \code{add\_friendship} for people $A_{m + 1}$ and $B_{m + 1}$, if $A_{m + 1}$ and $B_{m + 1}$ are already in the same squad, then their squad root is marked as circular (if not already), and the function exits. That case is correctly handled. Otherwise, the two are merged. If either $A_{m + 1}$ or $B_{m + 1}$ was formerly in a circular squad, assert by the inductive hypothesis that \code{circulars} contains this information. So, \code{add\_friendship} correctly marks the resulting union squad as also circular. Otherwise, the union set is not marked as circular, and the function exits. Observe that none of these cases adds someone in a non-circular group to the \code{circulars} set. Because \code{add\_friendship} persists the correctness of the \code{circulars} set after $m + 1$ calls to \code{add\_friendship}, the inductive step is proven. This also proves the claim inductively.
+\end{itemize}
+
+Assert from the proof above that after any $m$ calls on the data structure, \code{circulars} correctly holds the roots to circular squads. It may also hold people within but no longer at the root of circular squads due to unions, but any people not at the root of a squad (anymore) are simply ignored. Thus, if any person A is in a circular squad, the \code{circulars} set will mark that the root of that squad as circular, and calls to \code{get\_squad} will return "circle" in the name. 
+
+\medskip
+Because people not in circular groups are never added to the \code{circulars} set, calls to to \code{get\_squad} will only ever return "circle" if the root of the squad is in the \code{circulars} set. It will be in the \code{circulars} set if the squad is in-fact circular. By these two cases, the algorithm must be correct.
+
+\medskip
+\textbf{Runtime}: \\ 
+Assert from part $(a)$ that the runtime of $m$ calls to the original algorithm is $O(m \log^*n)$. Introducing the \code{circulars} set doesn't increase runtime. Assuming querying the \code{circulars} set and appending "circle" to the output name is a constant time operation, the complexity of \code{get\_squad} has not changed. There are now four more set operations in \code{add\_friendship} and another three \code{find} operations. However, the number of calls to UnionFind in the \code{add\_friendship} function is still constant. Thus, because the order of time complexity hasn't changed in any data structure methods, $m$ calls with $n$ total people on \code{SquadTrackerWithCircles} will still take $O(m \log^*n)$ time.
+\end{quote}
 
 \item {\bf Greedy scheduling (35 points)} Consider the following scheduling problem: we have two machines,
 and a set of jobs $j_1,j_2,j_3,\ldots,j_n$ that we have to process.
