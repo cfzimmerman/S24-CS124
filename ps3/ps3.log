@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  19 FEB 2024 23:30
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  20 FEB 2024 17:22
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -557,34 +557,45 @@ t op-er-a-tions in $[]$
 <./pics/q7_scheduling.png, id=76, 900.36375pt x 913.4125pt>
 File: ./pics/q7_scheduling.png Graphic file (type png)
 <use ./pics/q7_scheduling.png>
-Package pdftex.def Info: ./pics/q7_scheduling.png  used on input line 659.
+Package pdftex.def Info: ./pics/q7_scheduling.png  used on input line 665.
 (pdftex.def)             Requested size: 405.15994pt x 411.03183pt.
 
-Overfull \hbox (0.63416pt too wide) in paragraph at lines 658--660
+Overfull \hbox (0.63416pt too wide) in paragraph at lines 664--666
 []|  [] 
  []
 
-[21 <./pics/q7_scheduling.png>] [22] [23] [24] [25] (./ps3.aux) ) 
+[21] [22 <./pics/q7_scheduling.png>] [23] [24] [25]
+<./pics/q7d_scheduling.png, id=94, 1636.1125pt x 461.725pt>
+File: ./pics/q7d_scheduling.png Graphic file (type png)
+<use ./pics/q7d_scheduling.png>
+Package pdftex.def Info: ./pics/q7d_scheduling.png  used on input line 780.
+(pdftex.def)             Requested size: 556.2709pt x 156.98442pt.
+
+Overfull \hbox (65.02124pt too wide) in paragraph at lines 779--781
+[]|  [] 
+ []
+
+[26 <./pics/q7d_scheduling.png>] (./ps3.aux) ) 
 Here is how much of TeX's memory you used:
- 5148 strings out of 476025
- 78788 string characters out of 5790017
- 1875388 words of memory out of 5000000
- 25464 multiletter control sequences out of 15000+600000
+ 5155 strings out of 476025
+ 78987 string characters out of 5790017
+ 1876388 words of memory out of 5000000
+ 25470 multiletter control sequences out of 15000+600000
  575396 words of font info for 111 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  62i,10n,67p,1656b,528s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/te
-xlive/2023/texmf-dist/fonts/type1/public/fourier/fourier-ml.pfb></usr/local/tex
-live/2023/texmf-dist/fonts/type1/public/fourier/fourier-ms.pfb></usr/local/texl
-ive/2023/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/
-texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putb8a.pfb></usr/local/texlive
-/2023/texmf-dist/fonts/type1/adobe/utopia/putr8a.pfb></usr/local/texlive/2023/t
-exmf-dist/fonts/type1/adobe/utopia/putri8a.pfb></usr/local/texlive/2023/texmf-d
-ist/fonts/type1/public/cm-super/sftt1095.pfb>
-Output written on ps3.pdf (25 pages, 567432 bytes).
+</usr/local/texlive/2023/texmf-di
+st/fonts/type1/public/fourier/fourier-ml.pfb></usr/local/texlive/2023/texmf-dis
+t/fonts/type1/public/fourier/fourier-ms.pfb></usr/local/texlive/2023/texmf-dist
+/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2023/texmf-
+dist/fonts/type1/adobe/utopia/putb8a.pfb></usr/local/texlive/2023/texmf-dist/fo
+nts/type1/adobe/utopia/putr8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/typ
+e1/adobe/utopia/putri8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/pub
+lic/cm-super/sftt1095.pfb>
+Output written on ps3.pdf (26 pages, 690170 bytes).
 PDF statistics:
- 127 PDF objects out of 1000 (max. 8388607)
- 81 compressed objects within 1 object stream
+ 132 PDF objects out of 1000 (max. 8388607)
+ 83 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 11 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 16 words of extra memory for PDF output out of 10000 (max. 10000000)
 
