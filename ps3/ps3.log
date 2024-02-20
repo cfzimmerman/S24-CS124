@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  19 FEB 2024 17:42
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  19 FEB 2024 23:30
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -553,26 +553,38 @@ Overfull \hbox (47.82336pt too wide) in paragraph at lines 626--628
 t op-er-a-tions in $[]$
  []
 
-[20] (./ps3.aux) ) 
+[20]
+<./pics/q7_scheduling.png, id=76, 900.36375pt x 913.4125pt>
+File: ./pics/q7_scheduling.png Graphic file (type png)
+<use ./pics/q7_scheduling.png>
+Package pdftex.def Info: ./pics/q7_scheduling.png  used on input line 659.
+(pdftex.def)             Requested size: 405.15994pt x 411.03183pt.
+
+Overfull \hbox (0.63416pt too wide) in paragraph at lines 658--660
+[]|  [] 
+ []
+
+[21 <./pics/q7_scheduling.png>] [22] [23] [24] [25] (./ps3.aux) ) 
 Here is how much of TeX's memory you used:
- 5136 strings out of 476025
- 78550 string characters out of 5790017
- 1864388 words of memory out of 5000000
- 25458 multiletter control sequences out of 15000+600000
- 574010 words of font info for 106 fonts, out of 8000000 for 9000
+ 5148 strings out of 476025
+ 78788 string characters out of 5790017
+ 1875388 words of memory out of 5000000
+ 25464 multiletter control sequences out of 15000+600000
+ 575396 words of font info for 111 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 62i,8n,67p,1656b,528s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourie
-r/fourier-ml.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier
-/fourier-ms.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts
-/symbols/msbm10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopi
-a/putb8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putr8
-a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putri8a.pfb>
-</usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb>
-Output written on ps3.pdf (20 pages, 414678 bytes).
+ 62i,10n,67p,1656b,528s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/te
+xlive/2023/texmf-dist/fonts/type1/public/fourier/fourier-ml.pfb></usr/local/tex
+live/2023/texmf-dist/fonts/type1/public/fourier/fourier-ms.pfb></usr/local/texl
+ive/2023/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/
+texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putb8a.pfb></usr/local/texlive
+/2023/texmf-dist/fonts/type1/adobe/utopia/putr8a.pfb></usr/local/texlive/2023/t
+exmf-dist/fonts/type1/adobe/utopia/putri8a.pfb></usr/local/texlive/2023/texmf-d
+ist/fonts/type1/public/cm-super/sftt1095.pfb>
+Output written on ps3.pdf (25 pages, 567432 bytes).
 PDF statistics:
- 109 PDF objects out of 1000 (max. 8388607)
- 70 compressed objects within 1 object stream
+ 127 PDF objects out of 1000 (max. 8388607)
+ 81 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 11 words of extra memory for PDF output out of 10000 (max. 10000000)
 

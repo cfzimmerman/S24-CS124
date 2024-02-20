@@ -644,6 +644,21 @@ be broken arbitrarily.)
 For all $n > 3$, give an instance of this problem for which
 the completion time of the assignment of the greedy algorithm is a factor of $3/2$ away from the best
 possible assignment of jobs.
+\begin{quote}
+  \color{purple}
+Consider this instance: For $n$ jobs, let the first $n - 1$ jobs cost a runtime of $1$. Have the last job cost a runtime of $n - 1$. An optimal scheduler will put the final job of cost $n - 1$ on one machine and have the other machine run all the first $n - 1$ jobs of cost $1$ so that both finish at time $n - 1$. With the input as-described, this will be the exact runtime for any size $n \geq 3$ because the single-cost jobs will always equal the $n - 1$ cost job to end at the same time.
+
+\medskip
+However, because the heavy job is listed last, the greedy scheduler will divide the first $n - 1$ tasks of time $1$ between the two machines. Depending on whether $n - 1$ is even or odd, the two machines will either have the same number of $1$-cost tasks, or one will have one more task than the other. If the former case, the final heavy task is put on either machine. If the latter, the final heavy task is put on the machine with one less of the single-cost tasks. Regardless, all greedily-scheduled tasks won't be finished until the loaded machine finishes the first $floor(\frac{n - 1}{2})$ tasks of cost $1$ and then finishes the heavy task of cost $n - 1$. When $n$ is even, this gives the greedy scheduler a performance of $\frac{n - 2}{2} + n - 1 = \frac{3}{2}n - 2$. When odd, it finishes in $\frac{n - 1}{2} + n - 1 = \frac{3}{2}n - \frac{3}{2}$. Scaling the optimal schedule by $\frac{3}{2}$ yields $\frac{3}{2}(n - 1) = \frac{3}{2}n - \frac{3}{2}$. So, when $n$ is even, the greedy scheduler performs $0.5$ units of time faster than $\frac{3}{2}$ times the optimal. When $n$ is odd, the greedy schedule performs exactly $\frac{3}{2}$ times the optimal schedule. These bounds are exact for any integer $n \geq 3$.
+
+\medskip
+Explanation of the $n = 4$ example below: There are four jobs listed in \code{(id, cost)} pairs. The optimal scheduler puts \code{j1}, \code{j2}, and \code{j3} on \code{M1} and \code{j4} on \code{M2}. Both machines have an equal load and finish at time $3$. The greedy scheduler puts \code{j1} on \code{M1}, balances that with \code{j2} on \code{M2}, puts \code{j3} arbitrarily on \code{M1}, and then is forced to put \code{j4} on a machine that already has a task. \code{M2} finishes after \code{M1} at time \code{4}.
+
+\medskip
+\hspace*{-3em}
+\includegraphics[scale=0.45]{./pics/q7_scheduling.png}
+  
+\end{quote}
 \item
 {\bf (15 points)}
 Prove that the greedy algorithm always yields a completion
@@ -652,12 +667,84 @@ time within a factor of 3/2 of the best possible placement of jobs.
 best placement, the completion time is at least as big as the biggest
 job, and at least as big as half the sum of the jobs.  You may want to
 use both of these facts.)
+\begin{quote}
+  \color{purple}
+  Let $T_{o}$ be the time required for an optimal scheduling and let $T_{g}$ be the time required by the greedy scheduler. 
+
+  \medskip
+Begin by establishing the lower bound of the greedy algorithm as that of the optimal scheduler: Assume for purposes of contradiction that the lower bound of the greedy algorithm were less than that of optimal scheduling. This implies the optimal scheduling is not actually optimal, which is a contradiction. Thus, the greedy algorithm must be lower bounded in performance by optimal scheduling. 
+
+\medskip
+For an upper bound, define $M$ to be the maximum time any input task takes to complete. Both the optimal and greedy algorithms run in time greater than or equal to $M$ because they both must finish at least that task. Similarly, the most optimal schedule perfectly balances tasks between the two machines, implying that neither scheduler can be faster than $\frac{S}{2}$ where $S$ is the sum of time spent in all jobs.
+
+\medskip
+Because the greedy scheduler balances work between the machines while allocating jobs, the end behavior is most interesting. Consider two cases of input:
+\begin{itemize}
+  \item M is the last element in the list. Under this category, consider two more cases: 
+  \begin{itemize}
+    \item $M$ takes less than or the same amount of time than the rest of the tasks combined: If the greedy-scheduled machines were perfectly balanced with the previous $S - M$ amount of work when $M$ is reached (the worst case), then the overloaded machine begins with $\frac{S - M}{2}$ work. Adding $M$ will add at at most another $\frac{S}{2}$ units of time. This yields a time bound for the greedily scheduled tasks of $T_g \leq \frac{S - M}{2} + \frac{S}{2} = S - \frac{M}{2}$. Under the current assumption, $M$ can be at-most the same amount of work as all other tasks combined, making $M \leq \frac{S}{2}$. This simplifies the greedy runtime to $T_g \leq S - \frac{\frac{S}{2}}{2} = \frac{3}{4}S$. The optimal scheduler is bounded by perfectly balancing the input tasks. Thus, $T_o \geq \frac{1}{2}S$, so $T_g \leq \frac{3}{4}S = \frac{3}{2} \cdot \frac{1}{2}S = \frac{3}{4}S \leq \frac{3}{2} \cdot T_o$. This proves the claim for this sub-case.
+    \item If $M$ takes more time than the rest of the tasks combined, then the optimal scheduler takes at least $M$ time. This implies that $\frac{S}{2} < M$. If the greedy scheduler encounters $M$ at the end of the list with a perfect balance between its machines (again, least favorable), $T_g$ will be at most $\frac{S - M}{2} + M = \frac{S}{2} - \frac{M}{2} + M$. Substituting the case-specific assumption that $\frac{S}{2} < M$ yields $T_g \leq \frac{S}{2} - \frac{M}{2} + M < M - \frac{M}{2} + M = \frac{3}{2}M = \frac{3}{2} \cdot T_o$. That proves the claim for this subcase as well. 
+  \end{itemize}
+\item The last task is not $M$: If the last task is not $M$, then the greedy scheduler will have scheduled around $M$ since it arose such that the difference in work between the two greedy machines is less than or equal to the difference when $M$ appears at the end. Returning to the two cases from the section above, this means that the machine to which $M$ is allocated will have to do less than $\frac{S - M}{2}$ work before processing $M$. Then, all tasks following $M$ will either be allocated to the other machine or allocated back to the machine with $M$ depending on how long $M$ takes. Regardless, it will take less than or equal to the time required when $M$ appears at the end. So, the first point proves the cases at the upper bound, and any scheduling of $M$ before the end fits within that bound. 
+\end{itemize}
+Thus, regardless of whether or not $M$ appears at the end and regardless of whether $M$ is greater than all the other tasks combined or not, it must be the case that the difference between $T_o$ and $T_g$ is at most $\frac{3}{2} \cdot T_o$ for any collection or ordering of input jobs. 
+\end{quote}
 \item
 {\bf (10 points)} 
 Suppose now instead of 2 machines we have $m$ machines and the completion time is defined as the maximum load over all the $m$ machines.  
 Prove the best upper bound you can on the ratio of the 
 performance of the greedy solution to the optimal solution, as a
 function of $m$? 
+\begin{quote}
+  \color{purple}
+Note: Because $m$ has now been introduced as the number of machines, I'm renaming $M$ from the previous proof to $L$. It still means the maximum (longest) time any single job requires to complete. I'll also carry over the definitions of runtime for the optimal scheduler $T_o$ and the greedy scheduler $T_g$. 
+
+\medskip
+As before, the minimum time for both algorithms is at least that of $L$, the longest job. Similarly, neither algorithm can run faster than the sum of time required to complete all tasks divided perfectly between machines. If there are $n$ jobs that take a total of $S$ time to complete, that sets a lower bound of $\frac{S}{m}$. 
+
+\medskip
+Again consider the case where the $L$ job occurs last in the input list and break that into two cases regarding the length of $L$:
+
+\medskip
+$(1)$ $L$ takes the same or less time to complete than $\frac{S}{m}$. In this case, it's possible for the optimal scheduler to accommodate $L$ while still finishing as little as $\frac{S}{m}$ time. Considering the greedy scheduler in the worst case, the first $n - 1$ tasks have already been perfectly allocated by the time $L$ is discovered, so $L$ is allocated to a machine that's already been assigned $\frac{S - L}{m}$ tasks. This machine finishes after $\frac{S - L}{M} + L$ time. Using the case assumption that $L \leq \frac{S}{m}$ yields this bound:
+  \begin{align*}
+      && T_g \leq \frac{S - L}{m} + L && \text{Initial} && \\
+      && \leq \frac{S - \frac{S}{m}}{m} + \frac{S}{m} && \text{Substitute} && \\
+      && = \frac{2S - \frac{S}{m}}{m} && \text{Join fractions} && \\
+      && = \frac{2S}{m} - \frac{S}{m^2} && \text{Flatten fraction} && \\
+      && = \frac{S(2m - 1)}{m^2}  && \text{Join terms} && \\
+  \end{align*} 
+
+To express this bound as a constant relation to the minimum optimal time, introduce a variable $k$ to identify the target ratio and simplify:
+  \begin{align*}
+      && \frac{S(2m - 1)}{m^2} = k\frac{S}{m} && \text{Initial} && \\
+      && \frac{2m - 1}{m^2} = \frac{k}{m} && \text{Divide by S} && \\
+      && \frac{2m - 1}{m} = k && \text{Multiply by M} && \\
+  \end{align*} 
+
+  Thus, in the case where $L \leq \frac{S}{m}$, the maximum value of $T_g$ is bounded by $k$ times the minimum value of $T_o$ where $k = \frac{2m - 1}{m}$ and $m$ is the number of available machines.
+
+  \medskip
+  $(2)$ Next, consider the case where $\frac{S}{m} < L$. In this case, the optimal scheduler will be lower bounded by the time required to complete $L$. Assume again the worst case for the greedy algorithm where $L$ is encountered as the last job and all previous jobs are equally distributed among the $m$ machines. In this (worst) case, the greedy scheduler will require $\frac{S - L}{m} + L$ time to complete the last job. Substituting the case-identity yields the following:
+  \begin{align*}
+      && T_g \leq \frac{S - L}{m} + L && \text{Initial} && \\
+      && = \frac{S}{m} - \frac{L}{m} + L && \text{Split fraction} && \\
+      && < L - \frac{L}{m} + L && \text{Substitute L} && \\
+      && = 2L - \frac{L}{m} && \text{Simplify} && \\
+  \end{align*} 
+
+Using this bound in terms of $L$, search for a new constant $k$ expressing the relation between the lower $T_o$ bound and the upper $T_g$ bound in this case:
+  \begin{align*}
+      && 2L - \frac{L}{m} = kL && \text{Initial} && \\
+      && 2 - \frac{1}{m} = k && \text{Divide by L} && \\
+      && \frac{2m - 1}{m} = k && \text{Simplify} && \\
+  \end{align*} 
+
+  So, in the case where $\frac{S}{m} < L$, the maximum value of $T_g$ is is bounded by $k$ times the minimum value of $T_o$ where $k = \frac{2m - 1}{m}$ and $m$ is the number of available machines.
+
+  \medskip
+  Recall from the proof for part $(b)$ that the worst-case scheduling for $T_g$ occurs when $L$ appears at the end of the list of jobs. Again, that's because $T_g$ otherwise balances out long jobs by distributing to other machines if $L$ occurs earlier in the input list. So, if the worst-case ratio between $T_g$ and $T_o$ in both instances of the best and worst cases is $\frac{2m - 1}{m}$ where $m$ is the number of machines, it must be the case that the ratio of performance between the optimal and greedy solutions is bounded by $T_o \leq T_g \leq T_o \cdot \frac{2m - 1}{m}$.
+\end{quote}
 \item
 {\bf (5 points)} 
 Give a family of examples (that is, one for
