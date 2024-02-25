@@ -1,9 +1,73 @@
 use crate::error::{PsetErr, PsetRes};
-use std::ops::{Add, AddAssign, Mul, Sub};
+use std::ops::{Add, AddAssign, Mul, Range, Sub};
 
 #[derive(PartialEq, Eq)]
 pub struct Matrix<T> {
     inner: Vec<Vec<T>>,
+}
+
+pub struct SliceMatrix<'a, T> {
+    parent: &'a Matrix<T>,
+    rows: Range<usize>,
+    cols: Range<usize>,
+}
+
+impl<'a, T> SliceMatrix<'a, T>
+where
+    T: Mul<Output = T> + AddAssign + Default + Copy,
+    for<'b> &'b T: Add<Output = T> + Sub<Output = T>,
+{
+    /// Returns the number of rows in this matrix
+    fn num_rows(&self) -> usize {
+        debug_assert!(
+            self.rows.end <= self.parent.num_rows(),
+            "Slice matrix row range should always be in bounds"
+        );
+        self.rows.start - self.rows.end
+    }
+
+    /// Returns the number of columns in this matrix
+    fn num_cols(&self) -> usize {
+        debug_assert!(
+            self.cols.end <= self.parent.num_cols(),
+            "Slice matrix col range should always be in bounds"
+        );
+        self.cols.start - self.cols.end
+    }
+
+    /// Returns a matrix representing the operation left + right
+    pub fn add(left: &'a SliceMatrix<T>, right: &'a SliceMatrix<T>) -> PsetRes<Matrix<T>> {
+        Self::op_one_to_one(left, right, |l, r| l + r)
+    }
+
+    /// Returns a matrix representing the operation left - right
+    pub fn sub(left: &'a SliceMatrix<T>, right: &'a SliceMatrix<T>) -> PsetRes<Matrix<T>> {
+        Self::op_one_to_one(left, right, |l, r| l - r)
+    }
+
+    fn op_one_to_one(
+        left: &'a SliceMatrix<T>,
+        right: &'a SliceMatrix<T>,
+        op: fn(&T, &T) -> T,
+    ) -> PsetRes<Matrix<T>> {
+        if left.num_rows() != right.num_rows() || left.num_cols() != right.num_cols() {
+            return Err(PsetErr::Static(
+                "Cannot perform a one to one operation on matrices of different dimensions",
+            ));
+        }
+        let mut res = Vec::with_capacity(left.num_rows());
+        for (l_row, r_row) in left.rows.clone().zip(right.rows.clone()) {
+            let mut row = Vec::with_capacity(left.num_cols());
+            for (l_col, r_col) in left.cols.clone().zip(right.cols.clone()) {
+                row.push(op(
+                    &left.parent.inner[l_row][l_col],
+                    &right.parent.inner[r_row][r_col],
+                ));
+            }
+            res.push(row);
+        }
+        Ok(res.into())
+    }
 }
 
 impl<T> Matrix<T>
@@ -68,6 +132,7 @@ where
         right: &Matrix<T>,
         op: fn((&T, &T)) -> T,
     ) -> PsetRes<Matrix<T>> {
+        todo!("Have the main matrix convert into a slice matrix and then call this. We only want one full impl of these operations.");
         if left.num_rows() != right.num_rows() || left.num_cols() != right.num_cols() {
             return Err(PsetErr::Static(
                 "Cannot perform a one to one operation on matrices of different dimensions",
@@ -86,6 +151,16 @@ where
 impl<T> From<Vec<Vec<T>>> for Matrix<T> {
     fn from(item: Vec<Vec<T>>) -> Self {
         Matrix { inner: item }
+    }
+}
+
+impl<'a, T> From<&'a Matrix<T>> for SliceMatrix<'a, T> {
+    fn from(parent: &'a Matrix<T>) -> Self {
+        SliceMatrix {
+            parent,
+            rows: 0..parent.inner.len(),
+            cols: 0..parent.inner.get(0).map(|row| row.len()).unwrap_or(0),
+        }
     }
 }
 
