@@ -1,18 +1,18 @@
-use std::{
-    fs::{self, File},
-    io::BufReader,
-};
-
 use crate::error::PsetRes;
 use serde::{Deserialize, Serialize};
+use std::{fs::File, io::BufReader};
 
-const MATRIX_FILES: [&str; 1] = ["./src/test_data/3x3.json"];
+const MATRIX_FILES: [&str; 3] = [
+    "./src/test_data/3x3.json",
+    "./src/test_data/8x8.json",
+    "./src/test_data/64x64.json",
+];
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TestMatrix {
-    /// n * m matrix
+    /// n * n matrix
     pub left: Vec<Vec<i64>>,
-    /// m * k matrix
+    /// n * n matrix
     pub right: Vec<Vec<i64>>,
     /// left + right
     pub sum: Vec<Vec<i64>>,
