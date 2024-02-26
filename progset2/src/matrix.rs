@@ -45,6 +45,32 @@ where
     fn num_cols(&self) -> usize {
         self.inner.get(0).map(|arr| arr.len()).unwrap_or(0)
     }
+
+    /*
+    fn trim_padding(mut self, bottom_ct: usize, right_ct: usize) -> PsetRes<Self> {
+        if bottom_ct >= self.num_rows() || right_ct >= self.num_cols() {
+            return Err(PsetErr::Static(
+                "Cannot trim more padding than entries in the matrix.",
+            ));
+        }
+        if bottom_ct > 0 {
+            self.inner
+                .drain((self.num_rows() - bottom_ct)..self.num_rows());
+        }
+        let num_cols = self.num_cols();
+        if right_ct > 0 {
+            self.inner = self
+                .inner
+                .into_iter()
+                .map(|mut cols| {
+                    cols.drain((num_cols - right_ct)..num_cols);
+                    cols
+                })
+                .collect();
+        }
+        Ok(self)
+    }
+    */
 }
 
 #[derive(Debug)]
@@ -103,6 +129,28 @@ where
         self.cols.end + self.col_pad_sz - self.cols.start
     }
 
+    /// If a matrix is not a square with even-length sides, pads it with
+    /// zeroes until it is one
+    fn pad_even_square(&mut self) {
+        self.row_pad_sz = 0;
+        self.col_pad_sz = 0;
+        if self.num_rows() % 2 != 0 {
+            self.row_pad_sz += 1;
+        }
+        if self.num_cols() % 2 != 0 {
+            self.col_pad_sz += 1;
+        }
+        if self.num_rows() < self.num_cols() {
+            self.row_pad_sz += self.num_cols() - self.num_rows();
+        }
+        if self.num_cols() < self.num_rows() {
+            self.col_pad_sz += self.num_rows() - self.num_cols();
+        }
+        debug_assert!(self.num_rows() == self.num_cols());
+        debug_assert!((self.num_rows() + self.num_cols()) % 2 == 0);
+    }
+
+    /*
     /// Returns a range such that iterating its indices covers every row
     /// index in the slice matrix INCLUDING IMAGINARY PADDING
     fn row_range_padded(&self) -> Range<usize> {
@@ -114,6 +162,7 @@ where
     fn col_range_padded(&self) -> Range<usize> {
         self.cols.start..(self.cols.end + self.col_pad_sz)
     }
+    */
 
     /// Returns a matrix representing the operation left + right
     fn add(left: &'a SliceMatrix<T>, right: &'a SliceMatrix<T>) -> PsetRes<Matrix<T>> {
@@ -128,6 +177,7 @@ where
     /// If the value is in the normal slice range, returns it. If the value is only in
     /// the padded range, returns the default value for T. (with numbers, 0)
     /// Else, returns None, index out of bounds.
+    /*
     fn get_padded(&self, row: usize, col: usize) -> Option<T> {
         if self.rows.contains(&row) && self.cols.contains(&col) {
             return self
@@ -142,29 +192,23 @@ where
         }
         None
     }
+    */
 
     /// Performs O(n^3) iterative multiplication on the given matrices.
-    pub fn mul_iter(left: &'a SliceMatrix<T>, right: &'a SliceMatrix<T>) -> PsetRes<Matrix<T>> {
+    /// If the input matrices are padded, the output matrix is computed
+    /// without padding.
+    fn mul_iter(left: &'a SliceMatrix<T>, right: &'a SliceMatrix<T>) -> PsetRes<Matrix<T>> {
         if left.num_cols() != right.num_rows() {
             return Err(PsetErr::Static("Matrix dims don't support right multiply"));
         }
         let mut res: Vec<Vec<T>> = Vec::with_capacity(left.num_rows());
-        for left_row in left.row_range_padded() {
+        for left_row in left.rows.clone() {
             let mut row: Vec<T> = Vec::with_capacity(right.num_rows());
-            for right_col in right.col_range_padded() {
+            for right_col in right.cols.clone() {
                 let mut sum = T::default();
-                for offset in left.col_range_padded() {
-                    sum += match (
-                        left.get_padded(left_row, offset),
-                        right.get_padded(offset, right_col),
-                    ) {
-                        (Some(l), Some(r)) => l * r,
-                        _ => {
-                            return Err(PsetErr::Static(
-                                "mul_iter tried to access index out of bounds",
-                            ))
-                        }
-                    }
+                for offset in left.cols.clone() {
+                    sum +=
+                        left.parent.inner[left_row][offset] * right.parent.inner[offset][right_col];
                 }
                 row.push(sum);
             }
@@ -222,7 +266,7 @@ impl<'a, T> From<&'a Matrix<T>> for SliceMatrix<'a, T> {
 mod matrix_tests {
     use crate::{
         error::PsetRes,
-        matrix::Matrix,
+        matrix::{Matrix, SliceMatrix},
         test_data::{get_asymm_test_matrices, get_square_test_matrices},
     };
 
@@ -265,10 +309,26 @@ mod matrix_tests {
     #[test]
     fn mul_iter_asymm() -> PsetRes<()> {
         for matrices in get_asymm_test_matrices()? {
+            let left: Matrix<i64> = matrices.left.into();
+            let right: Matrix<i64> = matrices.right.into();
             assert_eq!(
-                Matrix::mul_iter(&matrices.left.into(), &matrices.right.into())?.take(),
+                Matrix::mul_iter(&left, &right)?.take(),
                 matrices.prod,
                 "Iter product should be equal"
+            );
+            // Padding should not affect matrix multiplication. It only
+            // affects matrix segmentation.
+            let mut left_sq: SliceMatrix<'_, i64> = (&left).into();
+            left_sq.pad_even_square();
+            let mut right_sq: SliceMatrix<'_, i64> = (&right).into();
+            right_sq.pad_even_square();
+            if left_sq.num_rows() != right_sq.num_rows() {
+                continue;
+            }
+            assert_eq!(
+                SliceMatrix::mul_iter(&left_sq, &right_sq)?.take(),
+                matrices.prod,
+                "Padded iter product should also be equal"
             );
         }
         Ok(())
