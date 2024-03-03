@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  2 MAR 2024 17:45
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.1.17)  3 MAR 2024 15:13
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -544,34 +544,61 @@ Overfull \hbox (28.03621pt too wide) in paragraph at lines 183--184
 o-lar trans-for-ma-tion ex-ists, $[]$
  []
 
+
+Overfull \hbox (9.75252pt too wide) in paragraph at lines 202--203
+\T1/futs/m/n/10.95 Also as-sert that any cov-er-age re-la-tion-ships within $[]
+$ and $[]$ are al-ready counted.
+ []
+
 [5]
+Overfull \hbox (20.906pt too wide) in paragraph at lines 229--229
+ []        \T1/cmtt/m/n/10.95 if left_ind < left.len and right[right_ind] cover
+s left[left_ind]:[] 
+ []
+
+[6]
+Overfull \hbox (9.82365pt too wide) in paragraph at lines 264--265
+[]\T1/futs/m/n/10.95 The only thing the al-go-rithm re-turns af-ter pre-pro-ces
+s-ing is the out-put of $[]$.
+ []
+
+
+Overfull \hbox (7.47667pt too wide) in paragraph at lines 267--270
+\T1/futs/m/n/10.95 Preprocessing maps $\FML/futmi/m/it/10.95 n$ \T1/futs/m/n/10
+.95 points and then sorts $\FML/futmi/m/it/10.95 n$ \T1/futs/m/n/10.95 points. 
+This takes time $\FML/futm/m/it/10.95 ^^B\T1/futs/m/n/10.95 (\FML/futmi/m/it/10
+.95 n\T1/futs/m/n/10.95 ) \FMS/futm/m/n/10.95 € \FML/futm/m/it/10.95 ^^B\T1/fut
+s/m/n/10.95 (\FML/futmi/m/it/10.95 n [] n\T1/futs/m/n/10.95 )$,
+ []
+
+[7]
 LaTeX Font Info:    Trying to load font information for TS1+futs on input line 
-226.
+306.
  (/usr/local/texlive/2023/texmf-dist/tex/latex/fourier/ts1futs.fd
 File: ts1futs.fd 2003/09/14 Fontinst v1.801 font definitions for TS1/futs.
-) [6]
-(./ps4.aux) ) 
+) [8]
+[9] (./ps4.aux) ) 
 Here is how much of TeX's memory you used:
- 5117 strings out of 476025
- 78232 string characters out of 5790017
- 1863388 words of memory out of 5000000
- 25439 multiletter control sequences out of 15000+600000
+ 5118 strings out of 476025
+ 78260 string characters out of 5790017
+ 1864388 words of memory out of 5000000
+ 25440 multiletter control sequences out of 15000+600000
  567924 words of font info for 95 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 62i,8n,67p,1369b,447s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/fou
-rier-bb.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/four
-ier-mex.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/four
-ier-ml.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/fouri
-er-mlit.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/four
-ier-ms.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putb8a.
-pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putr8a.pfb></u
-sr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putri8a.pfb></usr/loc
-al/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb>
-Output written on ps4.pdf (6 pages, 125454 bytes).
+ 62i,8n,67p,1668b,578s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier
+/fourier-bb.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/
+fourier-mex.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/
+fourier-ml.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/f
+ourier-mlit.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/fourier/
+fourier-ms.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/put
+b8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putr8a.pfb
+></usr/local/texlive/2023/texmf-dist/fonts/type1/adobe/utopia/putri8a.pfb></usr
+/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb>
+Output written on ps4.pdf (9 pages, 136290 bytes).
 PDF statistics:
- 70 PDF objects out of 1000 (max. 8388607)
- 43 compressed objects within 1 object stream
+ 81 PDF objects out of 1000 (max. 8388607)
+ 51 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
