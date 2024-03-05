@@ -9,6 +9,7 @@
 \usepackage{algorithmic}
 \usepackage{enumitem}
 \usepackage{fourier}
+\usepackage{fancyvrb}
 \usepackage[normalem]{ulem}
 
 
@@ -293,10 +294,86 @@ algorithm to determine the neatest way to print a paragraph. Of
 course you should provide a recursive definition of the value of the
 optimal solution that motivates your algorithm.
 
+\begin{quote}
+  \color{purple}
+  My solution is based on this subproblem structure: given a list of strings \code{words} and an integer \code{preference}, let \code{startline} be some index in the \code{words} list. The optimal pretty printing of \code{words} from \code{startline} requires finding the optimal end-of-line word \code{eol} after which to insert a linebreak such that the cost of the line from \code{startline} to \code{eol} plus the cost of the pretty printing beginning at \code{eol + 1} is minimized for all possible linebreak positions. My algorithm proceeds naturally from this idea.
+
+\medskip
+The base case occurs when the last word in the paragraph is both \code{startline} and \code{eol}. Here, the cost is just that of a single word. Then, iterate \code{startline} backward from the last word. For each \code{startline}, consider each possible position of \code{eol} from \code{startline} to the end. The cost of placing a newline at the candidate position is the cost of the line from \code{startline} to \code{eol} and the cost from the word after \code{eol} to the end (or $0$ if \code{eol} is the last word). Cache the most optimal \code{eol} position and value in \code{dp} at \code{startline} and iterate to \code{startline -= 1}. Once the final \code{startline = 0} entry is computed, the total cost of pretty printing the paragraph is stored in \code{dp[0].cost}, and the linebreaks can be determined by following the path of \code{eols} from $0$ to \code{dp[0].eol} iteratively until the end. Here's pseudocode for such an algorithm:
+
+\newpage
+\begin{Verbatim}[xleftmargin=-6em]
+fn cost(
+    words: Vec(String), 
+    range_start: int, 
+    range_end: int, 
+    chars_in_range: int
+) -> int:
+    return result of cost function based on inputs. 
+           Edge case: if A >= 0 and range_end 
+           is the last word, the cost is 0.
+
+fn find_pretty(words: Vec(String), pref: int) -> (total cost, linebreaks):
+    let dp = Vec({ cost: inf, next_line: None } for words.len entries);
+
+    let last_word = words.len - 1;
+    let last_word_cost = cost(words, last_word, last_word, words[last_word].len);
+    dp[last_word] = { cost: last_word_cost, next_line: None };
+
+    for startline in last_word..=0:
+        let chars_in_range = 0;
+        for eol in startline..=max_word:
+            chars_in_range += words[eol].len;
+            let cost_of_interval = cost(words, startline, eol, chars_in_range);
+            let cost_of_rest = dp[eol + 1].cost or 0 if eol >= last_word;
+            let cost_if_break_here = cost_of_interval + cost_of_rest;
+            if cost_if_break_here < dp[startline].cost:
+                dp[startline] = {
+                    cost: cost_if_break_here,
+                    next_line: eol + 1,
+                    chars_in_range
+                };
+      
+    return dp[0].cost and reconstruct the line breaks by following next_line
+    pointers from dp[0] until out of bounds.
+\end{Verbatim}
+
+\medskip
+\textbf{Correctness}: \\
+Begin by proving the correctness of the recurrence by reverse induction on the position of \code{startline} beginning at the end:
+
+\medskip
+\textit{Base case}: When \code{startline} is the last index in the \code{words} list, the cost of printing that paragraph is just the cost of printing the word. This will be correctly computed by the \code{cost} function and is stored in the \code{dp} array. Note that the last-line edge case implies that this printing will have cost $0$ unless the word itself is longer than the preference.
+
+\medskip
+\textit{Inductive hypothesis}: Assume for all \code{startline} positions from \code{words.len - 1} to some \code{startline = k} where \code{0 < k < words.len} that \code{dp[k].cost} is the optimal cost of pretty printing beginning at that word and that \code{dp[k].eol} points to the next word break in the optimal printing.
+
+\medskip
+\textit{Inductive step}: Consider the pretty printing beginning at \code{startline = k - 1}. Such a pretty printing by-definition must include \code{words[startline]}, so it must be accounted for. A newline can be inserted anywhere between \code{startline} and the last word or not at all. For each possible placement of \code{eol}, the cost of printing the line from \code{startline} to \code{eol} can be computed with the \code{cost} function. By counting the non-whitespace characters traversed from \code{words[startline]} to the current \code{words[eol]}, the number of characters in the window is also accumulated for use in the cost function. Once the line cost from \code{startline} to \code{eol} is determined, the rest of the paragraph from \code{eol + 1} to the end must be considered. By the inductive hypothesis, the optimal cost of the paragraph beginning at \code{eol + 1} is already computed and available in the \code{dp} array. Because the cost of the line with \code{startline} is independent of the cost of the line beginning at \code{eol + 1}, the optimal \code{eol} placement is just the minimized sum of printing costs before and after the \code{eol}. By considering every possible place in the paragraph from \code{startline} to \code{words.len - 1} to put the \code{eol}, the algorithm considers every possibility and chooses the one that optimizes the total cost of pretty printing the paragraph beginning at \code{startline}. This proves the inductive step.
+
+\medskip 
+By the inductive proof above, after running the algorithm on every entry in \code{words} from \code{words.len - 1} to \code{startline = 0}, the entry at \code{dp[0]} contains the minimum cost of pretty printing the text from $0$ to \code{words.len - 1}, which is the whole paragraph. So, given whitespace-free text where an optimal printing exists, it is returned.
+
+\medskip
+Similarly, the only thing the algorithm returns is the value at \code{dp[0].cost} and the linebreaks stored in the \code{dp} array. Because these costs and \code{eol} selections are correct by the inductive proof above, it must be the case that only valid solutions to the input are returned from the \code{pretty\_print} algorithm. By these two cases, the algorithm must be correct.
+
+\medskip
+\textbf{Runtime}: \\
+This analysis makes the assumptions that arithmetic and exponentiation (needed for the cost function) require constant time, and retrieving the number of characters in a string takes constant time. Thus, the \code{cost} function runs in constant time. The base case is just an array assignment, which also takes constant time. The main loop iterates the number of words in the input, which is $O(n)$. For each of those loops, the inner loop iterates $O(n)$ times again. Because the inner loop accumulates the character count of the window size as it iterates, the total cost of the main loop is thus $O(n^2)$. Retrieving the sum at the end takes constant time, and following the \code{eols} from \code{dp[0]} to the last word takes $O(n)$ time. Thus, the algorithm runs in time $O(n^2)$ where $n$ is the number of words in the input vector.
+\end{quote}
 
 \item
 {\bf (20 points)}
 Determine the minimal penalty, and corresponding optimal division of words into lines, for the text of this question, from the first `Determine' through the last `correctly.)', for the cases where M is 40 and M is 72. Words are divided only by spaces (and, in the pdf version, linebreaks) and each character that isn't a space (or a linebreak) counts as part of the length of a word, so the last word of the question has length eleven, which counts the period and the right parenthesis. (You can find the answer by whatever method you like, but we recommend coding your algorithm from the previous part. You don't need to submit code.) (The text of the problem may be easier to copy-paste from the tex source than from the pdf. If you copy-paste from the pdf, check that all the characters show up correctly.)
+\begin{quote}
+  \color{purple}
+  \begin{itemize}
+    \item TODO
+    \item For $m = 40$, the optimal cost is $X$ with linebreaks at indices \code{X}.
+    \item For $m = 72$, the optimal cost is $Y$ with linebreaks at indices \code{Y}.
+  \end{itemize}
+  
+\end{quote}
 \end{enumerate}
 
 \item \textbf{(25 points)} At the local library, every one of the $n$ books in the inventory is labeled with a real number; denote these numbers by $x_1 \le \cdots \le x_n$. The complement $\mathbb{R}\backslash \{x_1,\ldots,x_n\}$ decomposes into $n+1$ disjoint open intervals $I_0,\ldots, I_n$. We are given numbers $p_1,\ldots,p_n$ such that $p_i$ is the probability that the book labeled with $x_i$ is requested, as well as numbers $q_0,\ldots,q_n$ such that $q_i$ is the probability that some number in the interval $I_i$ is requested (corresponding to a book which is not available at the library). We assume that $p_1 + \cdots + p_n + q_0 + \cdots + q_n = 1$.
