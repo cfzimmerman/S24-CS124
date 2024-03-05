@@ -77,25 +77,8 @@ where
             formatted.push(' ');
         }
         println!("{formatted}");
-        println!("total cost: {}", self.total_cost);
+        println!("\ntotal cost: {}", self.total_cost);
         Ok(())
-    }
-
-    /// Given the DP array for the current paragraph, searches the array and extracts
-    /// line breaks for printing from the first word.
-    fn add_line_breaks(&mut self, dp: &[Cached]) {
-        let mut next_line = dp
-            .get(0)
-            .map(|entry| {
-                self.total_cost += entry.cost;
-                entry.next_line
-            })
-            .flatten();
-        while let Some(ind) = next_line {
-            self.total_cost += dp[ind].cost;
-            self.line_breaks.push(ind);
-            next_line = dp.get(ind).map(|entry| entry.next_line).flatten();
-        }
     }
 
     /// Prints a benchmark for how wide the preferred window of text is
@@ -103,6 +86,11 @@ where
         let chars: Vec<u8> = vec!['#'.try_into()?; self.pref_len];
         println!("\n{}", String::from_utf8(chars)?);
         Ok(())
+    }
+
+    /// Prints the list of line break indices
+    pub fn print_line_breaks(&self) {
+        println!("linebreak indices: {:?}", self.line_breaks);
     }
 
     /// Returns the cost of a line bounded by the given range of words with words
@@ -125,6 +113,23 @@ where
             return Ok(first_term.saturating_sub(second_term).saturating_sub(1));
         }
         Ok(closeness.saturating_pow(3).into())
+    }
+
+    /// Given the DP array for the current paragraph, searches the array and extracts
+    /// line breaks for printing from the first word.
+    fn add_line_breaks(&mut self, dp: &[Cached]) {
+        let mut next_line = dp
+            .get(0)
+            .map(|entry| {
+                self.total_cost += entry.cost;
+                entry.next_line
+            })
+            .flatten();
+        while let Some(ind) = next_line {
+            self.total_cost += dp[ind].cost;
+            self.line_breaks.push(ind);
+            next_line = dp.get(ind).map(|entry| entry.next_line).flatten();
+        }
     }
 }
 
