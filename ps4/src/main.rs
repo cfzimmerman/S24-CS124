@@ -32,11 +32,10 @@ fn main() -> anyhow::Result<()> {
     let input: Vec<String> = io::stdin().lines().map_while(Result::ok).collect();
     let trimmed: Vec<&str> = input
         .iter()
-        .flat_map(|txt| txt.split_whitespace())
+        .flat_map(|txt| txt.split_ascii_whitespace())
         .collect();
 
-    let mut pretty = PrettyPrint::new(pref_len, &trimmed);
-    pretty.find_pretty()?;
+    let pretty = PrettyPrint::build(pref_len, &trimmed)?;
     pretty.print_preference()?;
     pretty.print()?;
     if verbosity == OutputLen::Verbose {

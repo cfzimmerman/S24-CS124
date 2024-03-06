@@ -2,7 +2,7 @@ use std::{fmt::Display, ops::RangeInclusive};
 
 #[derive(Debug)]
 pub struct PrettyPrint<'a, T> {
-    pref_len: usize,
+    pref_len: i32,
     text: &'a [T],
     line_breaks: Vec<usize>,
     total_cost: i32,
@@ -18,30 +18,37 @@ impl<'a, T> PrettyPrint<'a, T>
 where
     T: AsRef<str> + Display,
 {
-    pub fn new(preferred_len: usize, text: &'a [T]) -> Self {
-        PrettyPrint {
-            pref_len: preferred_len,
+    /// Runs a DP algorithm on the input paragraph to determine the most
+    /// optimal placement of line breaks.
+    pub fn build(preferred_len: usize, text: &'a [T]) -> anyhow::Result<Self> {
+        let mut pretty = PrettyPrint {
+            pref_len: preferred_len.try_into()?,
             text,
             line_breaks: Vec::new(),
             total_cost: 0,
-        }
-    }
-
-    /// Runs a DP algorithm on the input paragraph to determine the most
-    /// optimal placement of line breaks.
-    pub fn find_pretty(&mut self) -> anyhow::Result<()> {
-        let mut dp = vec![Cached::default(); self.text.len()];
-
-        if let (Some(last_word), Some(last_dp)) = (self.text.last(), dp.last_mut()) {
+        };
+        let mut dp = vec![Cached::default(); text.len()];
+        if let (Some(last_word), Some(last_dp)) = (text.last(), dp.last_mut()) {
             // base case
-            let last_ind = self.text.len() - 1;
-            last_dp.cost = self.cost(last_ind..=last_ind, last_word.as_ref().len())?;
+            let last_ind = text.len() - 1;
+            last_dp.cost = Self::cost(
+                last_ind..=last_ind,
+                last_word.as_ref().len(),
+                pretty.pref_len,
+                text,
+            )?;
         }
-        for startline in (0..self.text.len()).rev() {
+
+        for startline in (0..text.len()).rev() {
             let mut chars_in_range: usize = 0;
-            for (eol, end_word) in self.text.iter().enumerate().skip(startline) {
+            for (eol, end_word) in text.iter().enumerate().skip(startline) {
                 chars_in_range += end_word.as_ref().len();
-                let cost_of_interval = self.cost(startline..=eol, chars_in_range)?;
+                let cost_of_interval = Self::cost(
+                    startline..=eol,
+                    chars_in_range,
+                    pretty.pref_len,
+                    pretty.text,
+                )?;
                 if cost_of_interval >= dp[startline].cost {
                     continue;
                 }
@@ -55,14 +62,14 @@ where
                 }
             }
         }
-        self.add_line_breaks(&dp);
-        Ok(())
+        pretty.add_line_breaks(&dp);
+        Ok(pretty)
     }
 
     /// Pretty-prints the input. If find_pretty has not been called, there will be
     /// no added line breaks.
     pub fn print(&self) -> anyhow::Result<()> {
-        let mut formatted = String::with_capacity(self.line_breaks.len() * self.pref_len);
+        let mut formatted = String::with_capacity(self.line_breaks.len() * self.pref_len as usize);
         let mut line_break_iter = self.line_breaks.iter();
         let mut next_line_break = line_break_iter.next();
 
@@ -83,7 +90,7 @@ where
 
     /// Prints a benchmark for how wide the preferred window of text is
     pub fn print_preference(&self) -> anyhow::Result<()> {
-        let chars: Vec<u8> = vec!['#'.try_into()?; self.pref_len];
+        let chars: Vec<u8> = vec!['#'.try_into()?; self.pref_len as usize];
         println!("\n{}", String::from_utf8(chars)?);
         Ok(())
     }
@@ -95,15 +102,19 @@ where
 
     /// Returns the cost of a line bounded by the given range of words with words
     /// in the range having a sum of `char_ct` characters.
-    fn cost(&self, words: RangeInclusive<usize>, char_ct: usize) -> anyhow::Result<i32> {
-        let (start, end, char_ct, pref_len): (i32, i32, i32, i32) = (
+    fn cost(
+        words: RangeInclusive<usize>,
+        char_ct: usize,
+        pref_len: i32,
+        text: &[T],
+    ) -> anyhow::Result<i32> {
+        let (start, end, char_ct): (i32, i32, i32) = (
             (*words.start()).try_into()?,
             (*words.end()).try_into()?,
             char_ct.try_into()?,
-            self.pref_len.try_into()?,
         );
         let closeness: i32 = pref_len - end + start - char_ct;
-        if closeness >= 0 && words.end() + 1 == self.text.len() {
+        if closeness >= 0 && words.end() + 1 == text.len() {
             // "The last line has no penalties if A >= 0"
             return Ok(0);
         }
@@ -119,11 +130,10 @@ where
     /// line breaks for printing from the first word.
     fn add_line_breaks(&mut self, dp: &[Cached]) {
         let mut next_line = dp.first().and_then(|entry| {
-            self.total_cost += entry.cost;
+            self.total_cost = entry.cost;
             entry.next_line
         });
         while let Some(ind) = next_line {
-            self.total_cost += dp[ind].cost;
             self.line_breaks.push(ind);
             next_line = dp.get(ind).and_then(|entry| entry.next_line);
         }
@@ -162,8 +172,7 @@ mod test_pretty {
             let mut prev_break_ct = usize::MAX;
             let text: Vec<&str> = text.split(' ').collect();
             for preference in [17, 32, 64] {
-                let mut pretty = PrettyPrint::new(preference, &text);
-                pretty.find_pretty()?;
+                let pretty = PrettyPrint::build(preference, &text)?;
                 assert!(
                     pretty.line_breaks.len() < prev_break_ct,
                     "line break counts should decrease as line preference increases"
@@ -180,16 +189,14 @@ mod test_pretty {
     fn cost() -> anyhow::Result<()> {
         let text = ["aa", "bb", "cc", "dd", "ee"];
         {
-            let mut pretty = PrettyPrint::new(2, &text);
-            pretty.find_pretty()?;
+            let pretty = PrettyPrint::build(2, &text)?;
             assert!(
                 pretty.total_cost == 0,
                 "preference 2: input should each have its own line"
             );
         }
         {
-            let mut pretty = PrettyPrint::new(5, &text);
-            pretty.find_pretty()?;
+            let pretty = PrettyPrint::build(5, &text)?;
             // pretty.print_preference()?;
             // pretty.print()?;
             assert!(
