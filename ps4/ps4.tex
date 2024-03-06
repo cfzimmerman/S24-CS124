@@ -367,12 +367,48 @@ This analysis makes the assumptions that arithmetic and exponentiation (needed f
 Determine the minimal penalty, and corresponding optimal division of words into lines, for the text of this question, from the first `Determine' through the last `correctly.)', for the cases where M is 40 and M is 72. Words are divided only by spaces (and, in the pdf version, linebreaks) and each character that isn't a space (or a linebreak) counts as part of the length of a word, so the last word of the question has length eleven, which counts the period and the right parenthesis. (You can find the answer by whatever method you like, but we recommend coding your algorithm from the previous part. You don't need to submit code.) (The text of the problem may be easier to copy-paste from the tex source than from the pdf. If you copy-paste from the pdf, check that all the characters show up correctly.)
 \begin{quote}
   \color{purple}
-  \begin{itemize}
-    \item TODO
-    \item For $m = 40$, the optimal cost is $X$ with linebreaks at indices \code{X}.
-    \item For $m = 72$, the optimal cost is $Y$ with linebreaks at indices \code{Y}.
-  \end{itemize}
-  
+  For $m = 40$, I computed an optimal cost of $2237$. It seems high, but I really struggled to find an error in my code: https://github.com/cfzimmerman/S24-CS124/blob/main/ps4/src/lib.rs. The block below has linebreaks at 5, 10, 18, 24, 30, 40, 48, 54, 62, 71, 78, 85, 92, 99, 105, 112, 120, 127, 135, and 142.
+  \begin{verbatim}
+########################################
+Determine the minimal penalty, and
+corresponding optimal division of words
+into lines, for the text of this question,
+from the first `Determine' through the
+last `correctly.)', for the cases where
+M is 40 and M is 72. Words are divided
+only by spaces (and, in the pdf version,
+linebreaks) and each character that isn't
+a space (or a linebreak) counts as part
+of the length of a word, so the last
+word of the question has length eleven,
+which counts the period and the right
+parenthesis. (You can find the answer by
+whatever method you like, but we recommend
+coding your algorithm from the previous
+part. You don't need to submit code.)
+(The text of the problem may be easier
+to copy-paste from the tex source than
+from the pdf. If you copy-paste from the
+pdf, check that all the characters show
+up correctly.)
+  \end{verbatim}
+
+  \medskip
+For $n = 72$, I computed an optimal cost of $479$ with linebreaks at indices 10, 22, 37, 50, 64, 79, 92, 104, 117, and 132.
+\begin{verbatim}
+########################################################################
+Determine the minimal penalty, and corresponding optimal division of words
+into lines, for the text of this question, from the first `Determine'
+through the last `correctly.)', for the cases where M is 40 and M is 72.
+Words are divided only by spaces (and, in the pdf version, linebreaks) and
+each character that isn't a space (or a linebreak) counts as part of the
+length of a word, so the last word of the question has length eleven, which
+counts the period and the right parenthesis. (You can find the answer by
+whatever method you like, but we recommend coding your algorithm from the
+previous part. You don't need to submit code.) (The text of the problem
+may be easier to copy-paste from the tex source than from the pdf. If you
+copy-paste from the pdf, check that all the characters show up correctly.)
+\end{verbatim}
 \end{quote}
 \end{enumerate}
 

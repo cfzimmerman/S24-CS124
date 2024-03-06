@@ -110,25 +110,22 @@ where
         if closeness < 0 {
             let first_term = 2i32.saturating_pow(closeness.abs().try_into()?);
             let second_term = closeness.saturating_pow(3);
-            return Ok(first_term.saturating_sub(second_term).saturating_sub(1));
+            return Ok(first_term.saturating_sub(second_term) - 1);
         }
-        Ok(closeness.saturating_pow(3).into())
+        Ok(closeness.saturating_pow(3))
     }
 
     /// Given the DP array for the current paragraph, searches the array and extracts
     /// line breaks for printing from the first word.
     fn add_line_breaks(&mut self, dp: &[Cached]) {
-        let mut next_line = dp
-            .get(0)
-            .map(|entry| {
-                self.total_cost += entry.cost;
-                entry.next_line
-            })
-            .flatten();
+        let mut next_line = dp.first().and_then(|entry| {
+            self.total_cost += entry.cost;
+            entry.next_line
+        });
         while let Some(ind) = next_line {
             self.total_cost += dp[ind].cost;
             self.line_breaks.push(ind);
-            next_line = dp.get(ind).map(|entry| entry.next_line).flatten();
+            next_line = dp.get(ind).and_then(|entry| entry.next_line);
         }
     }
 }

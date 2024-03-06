@@ -20,17 +20,16 @@ enum OutputLen {
 /// Reads text from stdin and pretty prints it given the character preference.
 fn main() -> anyhow::Result<()> {
     let mut args = env::args().skip(1);
-    let Some(pref_len) = args.next().map(|arg| arg.parse::<usize>().ok()).flatten() else {
+    let Some(pref_len) = args.next().and_then(|arg| arg.parse::<usize>().ok()) else {
         usage();
         return Ok(());
     };
     let verbosity: OutputLen = args
         .next()
-        .map(|arg| arg.as_str().try_into().ok())
-        .flatten()
+        .and_then(|arg| arg.as_str().try_into().ok())
         .unwrap_or(OutputLen::Normal);
 
-    let input: Vec<String> = io::stdin().lines().filter_map(Result::ok).collect();
+    let input: Vec<String> = io::stdin().lines().map_while(Result::ok).collect();
     let trimmed: Vec<&str> = input
         .iter()
         .flat_map(|txt| txt.split_whitespace())
@@ -53,9 +52,9 @@ impl TryFrom<&str> for OutputLen {
         match value {
             "normal" => Ok(Self::Normal),
             "verbose" => Ok(Self::Verbose),
-            _ => Err(anyhow::Error::msg(format!(
-                "Please choose verbosity 'normal' or 'verbose'"
-            ))),
+            _ => Err(anyhow::Error::msg(
+                "Please choose verbosity 'normal' or 'verbose'".to_string(),
+            )),
         }
     }
 }
