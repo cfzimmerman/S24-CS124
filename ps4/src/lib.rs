@@ -4,7 +4,7 @@ use std::{fmt::Display, ops::RangeInclusive};
 pub struct PrettyPrint<'a, T> {
     pref_len: i32,
     text: &'a [T],
-    line_breaks: Vec<usize>,
+    new_lines: Vec<usize>,
     total_cost: i32,
 }
 
@@ -24,7 +24,7 @@ where
         let mut pretty = PrettyPrint {
             pref_len: preferred_len.try_into()?,
             text,
-            line_breaks: Vec::new(),
+            new_lines: Vec::new(),
             total_cost: 0,
         };
         let mut dp = vec![Cached::default(); text.len()];
@@ -69,8 +69,8 @@ where
     /// Pretty-prints the input. If find_pretty has not been called, there will be
     /// no added line breaks.
     pub fn print(&self) -> anyhow::Result<()> {
-        let mut formatted = String::with_capacity(self.line_breaks.len() * self.pref_len as usize);
-        let mut line_break_iter = self.line_breaks.iter();
+        let mut formatted = String::with_capacity(self.new_lines.len() * self.pref_len as usize);
+        let mut line_break_iter = self.new_lines.iter().skip(1);
         let mut next_line_break = line_break_iter.next();
 
         for (ind, word) in self.text.iter().enumerate() {
@@ -96,8 +96,8 @@ where
     }
 
     /// Prints the list of line break indices
-    pub fn print_line_breaks(&self) {
-        println!("linebreak indices: {:?}", self.line_breaks);
+    pub fn print_new_lines(&self) {
+        println!("new line indices: {:?}", self.new_lines);
     }
 
     /// Returns the cost of a line bounded by the given range of words with words
@@ -131,10 +131,11 @@ where
     fn add_line_breaks(&mut self, dp: &[Cached]) {
         let mut next_line = dp.first().and_then(|entry| {
             self.total_cost = entry.cost;
+            self.new_lines.push(0);
             entry.next_line
         });
         while let Some(ind) = next_line {
-            self.line_breaks.push(ind);
+            self.new_lines.push(ind);
             next_line = dp.get(ind).and_then(|entry| entry.next_line);
         }
     }
@@ -174,10 +175,10 @@ mod test_pretty {
             for preference in [17, 32, 64] {
                 let pretty = PrettyPrint::build(preference, &text)?;
                 assert!(
-                    pretty.line_breaks.len() < prev_break_ct,
+                    pretty.new_lines.len() < prev_break_ct,
                     "line break counts should decrease as line preference increases"
                 );
-                prev_break_ct = pretty.line_breaks.len();
+                prev_break_ct = pretty.new_lines.len();
                 pretty.print_preference()?;
                 pretty.print()?;
             }

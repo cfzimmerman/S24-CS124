@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
     pretty.print_preference()?;
     pretty.print()?;
     if verbosity == OutputLen::Verbose {
-        pretty.print_line_breaks();
+        pretty.print_new_lines();
     }
 
     Ok(())
