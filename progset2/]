@@ -49,45 +49,6 @@ where
         SliceMatrix::add(&left.into(), &right.into())
     }
 
-    /// Returns an error if entries do not have equal width and height
-    /// dimensions. Must be Ok() for operations like addition and subtraction.
-    /// Note that Matrix does not have any notion of padding.
-    fn check_equal_dims(left: &Matrix<T>, right: &Matrix<T>) -> PsetRes<()> {
-        if left.num_rows() != right.num_rows() || left.num_cols() != right.num_cols() {
-            return Err(PsetErr::Static(
-                "Cannot perform a one to one operation on matrices of different dimensions",
-            ));
-        }
-        Ok(())
-    }
-
-    /// Adds `other` to `self`. Returns reference for method chaining.
-    fn add_in_place(&mut self, other: &Matrix<T>) -> PsetRes<&mut Self> {
-        self.op_one_to_one_in_place(other, |l, r| l + r)?;
-        Ok(self)
-    }
-
-    /// Subtracts `other` from `self`. Performs
-    /// (self entry) - (other entry) at every index.
-    /// Returns reference for method chaining.
-    fn sub_in_place(&mut self, other: &Matrix<T>) -> PsetRes<&mut Self> {
-        self.op_one_to_one_in_place(other, |l, r| l - r)?;
-        Ok(self)
-    }
-
-    /// Performs actions for every parallel entry between the two matrices, storing
-    /// the results of operations back in self.
-    fn op_one_to_one_in_place(&mut self, other: &Matrix<T>, op: fn(&T, &T) -> T) -> PsetRes<()> {
-        Matrix::check_equal_dims(self, other)?;
-        for row in 0..self.inner.len() {
-            for col in 0..self.inner[0].len() {
-                // indexing won't panic because of check_equal_dims
-                self.inner[row][col] = op(&self.inner[row][col], &other.inner[row][col]);
-            }
-        }
-        Ok(())
-    }
-
     /// Returns a matrix representing the operation left - right
     pub fn sub(left: &Matrix<T>, right: &Matrix<T>) -> PsetRes<Matrix<T>> {
         SliceMatrix::sub(&left.into(), &right.into())
@@ -404,63 +365,13 @@ where
         )
     }
 
-    /*
-    fn mul_strassen<'b>(
+    fn mul_strassen(
         left: &SliceMatrix<'b, T>,
         right: &SliceMatrix<'b, T>,
         base_sz: usize,
     ) -> PsetRes<Matrix<T>> {
-        if left.num_cols() <= base_sz || left.num_rows() <= base_sz {
-            return Self::mul_iter(&left, &right);
-        }
-
-        // SliceMatrix is just pointers and counters, so cloning is cheap.
-        let mut left_quad = left.try_split_quad()?;
-        let mut right_quad = right.try_split_quad()?;
-
-        for quad in [&mut left_quad, &mut right_quad] {
-            quad.top_left.pad_even_square();
-            quad.top_right.pad_even_square();
-            quad.bottom_left.pad_even_square();
-            quad.bottom_right.pad_even_square();
-        }
-
-        // Using this algorithm:
-        // https://en.wikipedia.org/wiki/Strassen_algorithm
-        let m1 = {
-            let part_a = SliceMatrix::add(&left_quad.top_left, &left_quad.bottom_right)?;
-            let part_b = SliceMatrix::add(&right_quad.top_left, &right_quad.bottom_right)?;
-            Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
-        };
-        let m2 = {
-            let part_a = SliceMatrix::add(&left_quad.bottom_left, &left_quad.bottom_right)?;
-            Self::mul_strassen(&(&part_a).into(), &right_quad.top_left, base_sz)?
-        };
-        let m3 = {
-            let part_b = SliceMatrix::sub(&right_quad.top_right, &right_quad.bottom_right)?;
-            Self::mul_strassen(&left_quad.top_left, &(&part_b).into(), base_sz)?
-        };
-        let m4 = {
-            let part_b = SliceMatrix::sub(&right_quad.bottom_left, &right_quad.top_left)?;
-            Self::mul_strassen(&left_quad.bottom_right, &(&part_b).into(), base_sz)?
-        };
-        let m5 = {
-            let part_a = SliceMatrix::add(&left_quad.top_left, &left_quad.top_right)?;
-            Self::mul_strassen(&(&part_a).into(), &right_quad.bottom_right, base_sz)?
-        };
-        let m6 = {
-            let part_a = SliceMatrix::sub(&left_quad.bottom_left, &left_quad.top_left)?;
-            let part_b = SliceMatrix::add(&left_quad.top_left, &left_quad.top_right)?;
-            Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
-        };
-        let m7 = {
-            let part_a = SliceMatrix::sub(&left_quad.top_right, &left_quad.bottom_right)?;
-            let part_b = SliceMatrix::add(&right_quad.bottom_left, &right_quad.bottom_right)?;
-            Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
-        };
-        todo!("Needs a function to add in place")
+        todo!()
     }
-    */
 }
 
 impl<T> From<Vec<Vec<T>>> for Matrix<T> {
@@ -518,8 +429,8 @@ mod matrix_tests {
     #[test]
     fn add_sub_square() -> PsetRes<()> {
         for matrices in get_square_test_matrices()? {
-            let mut left: Matrix<i64> = matrices.left.into();
-            let mut right: Matrix<i64> = matrices.right.into();
+            let left: Matrix<i64> = matrices.left.into();
+            let right: Matrix<i64> = matrices.right.into();
             assert_eq!(
                 Matrix::add(&left, &right)?.take(),
                 matrices.sum,
@@ -529,17 +440,6 @@ mod matrix_tests {
                 Matrix::sub(&left, &right)?.take(),
                 matrices.diff,
                 "Difference should be equal"
-            );
-            left.add_in_place(&right)?;
-            assert_eq!(
-                left.inner, matrices.sum,
-                "Sum should be equal after add in place"
-            );
-            left.sub_in_place(&right)?.sub_in_place(&right)?;
-            // ^ first undoes the addition, second performs sub
-            assert_eq!(
-                left.inner, matrices.diff,
-                "Difference should be equal in place"
             );
         }
         Ok(())
