@@ -522,7 +522,7 @@ where
         };
         let m6 = {
             let part_a = SliceMatrix::sub(&left_quad.bottom_left, &left_quad.top_left)?;
-            let part_b = SliceMatrix::add(&left_quad.top_left, &left_quad.top_right)?;
+            let part_b = SliceMatrix::add(&right_quad.top_left, &right_quad.top_right)?;
             Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
         };
         let m7 = {
@@ -597,12 +597,24 @@ where
     }
 }
 
+impl<T> Display for Matrix<T>
+where
+    T: AddAssign + Default + Copy + Debug + 'static,
+    for<'b> &'b T: Add<Output = T> + Sub<Output = T> + Mul<Output = T>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let as_sl: SliceMatrix<T> = self.into();
+        Display::fmt(&as_sl, f)?;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod matrix_tests {
     use crate::{
         error::PsetRes,
         matrix::{Matrix, SliceMatrix},
-        test_data::{get_asymm_test_matrices, get_square_test_matrices},
+        test_data::{get_asymm_test_matrices, get_square_test_matrices, get_test_4x4},
     };
 
     /// Tests matrix addition and subtraction
@@ -748,6 +760,27 @@ mod matrix_tests {
             iden.inner, joined.inner,
             "Matrix should be returned to identity form"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn static_4x4_mul() -> PsetRes<()> {
+        let inputs = get_test_4x4()?;
+        let left_mtx: Matrix<i64> = inputs.left.into();
+        let right_mtx: Matrix<i64> = inputs.right.into();
+        let iter_prod = Matrix::mul_iter(&left_mtx, &right_mtx)?;
+        let naive_rec_prod = Matrix::mul_naive_rec(&left_mtx, &right_mtx, 3)?;
+        let strassen_prod = Matrix::mul_strassen(&left_mtx, &right_mtx, 3)?;
+        assert_eq!(iter_prod.inner, inputs.prod, "Iter should equal input prod");
+        assert_eq!(
+            naive_rec_prod.inner, inputs.prod,
+            "Naive rec should equal input prod"
+        );
+        assert_eq!(
+            strassen_prod.inner, inputs.prod,
+            "Strassen should equal input prod"
+        );
+
         Ok(())
     }
 }

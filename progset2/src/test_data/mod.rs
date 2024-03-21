@@ -2,8 +2,9 @@ use crate::error::PsetRes;
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader};
 
-const SQUARE_MATRIX_FILES: [&str; 3] = [
+const SQUARE_MATRIX_FILES: [&str; 4] = [
     "./src/test_data/3x3.json",
+    "./src/test_data/4x4.json",
     "./src/test_data/8x8.json",
     "./src/test_data/64x64.json",
 ];
@@ -42,9 +43,17 @@ pub struct AsymmTestMatrix {
     pub prod: Vec<Vec<i64>>,
 }
 
+/// Returns a list of TestMatrix data where matrices do not have identical dimensions
 pub fn get_asymm_test_matrices() -> PsetRes<Vec<AsymmTestMatrix>> {
     ASYMM_MATRIX_FILES
         .iter()
         .map(|path| Ok(serde_json::from_reader(BufReader::new(File::open(*path)?))?))
         .collect()
+}
+
+/// Returns a 4x4 test matrix
+pub fn get_test_4x4() -> PsetRes<SquareTestMatrix> {
+    Ok(serde_json::from_reader(BufReader::new(File::open(
+        "./src/test_data/4x4.json",
+    )?))?)
 }
