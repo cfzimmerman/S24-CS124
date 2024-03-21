@@ -9,7 +9,7 @@ const SQUARE_MATRIX_FILES: [&str; 4] = [
     "./src/test_data/64x64.json",
 ];
 
-const ASYMM_MATRIX_FILES: [&str; 1] = ["./src/test_data/3x4.json"];
+const ASYMM_MATRIX_FILES: [&str; 2] = ["./src/test_data/3x4.json", "./src/test_data/255x256.json"];
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SquareTestMatrix {

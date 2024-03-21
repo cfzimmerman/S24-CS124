@@ -664,13 +664,11 @@ mod matrix_tests {
                 matrices.prod,
                 "Naive recursive product should be equal"
             );
-            /*
             assert_eq!(
                 Matrix::mul_strassen(&left, &right, 3)?.inner,
                 matrices.prod,
                 "Strassen product should be equal"
             );
-            */
         }
         Ok(())
     }
@@ -721,6 +719,11 @@ mod matrix_tests {
                     Matrix::mul_naive_rec(&left, &right, base_cutoff)?.take(),
                     matrices.prod,
                     "Naive recursive product should be equal"
+                );
+                assert_eq!(
+                    Matrix::mul_strassen(&left, &right, base_cutoff)?.inner,
+                    matrices.prod,
+                    "Strassen product should be equal"
                 );
             }
 
