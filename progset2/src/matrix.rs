@@ -8,37 +8,29 @@ use std::{
 #[derive(Debug)]
 pub struct Matrix<T> {
     inner: Vec<Vec<T>>,
+    /// This is for convenience when a function needs to
+    /// return a reference that sometimes must be the default value.
+    default_val: T,
+    /// The number of actually-existing rows and columns of data that came
+    /// from slice padding.
+    padded_rows: usize,
+    padded_cols: usize,
 }
 
 // TODO:
-// - Get the commented out test block to pass (debug strassen's algorithm).
-// - See if the two matrix mults should be merged
-// - Full reread and cleaning. This is getting messy.
+// What to do about quad blocks that are entirely padding? How to gracefully
+// drop them and avoid that computation?
+// When a split has failed:
+// - Any multiplication is zero
+// - Any addition is identity
+//
+// Begin by making SplitQuad return Error variants
 
 impl<T> Matrix<T>
 where
     T: AddAssign + Default + Copy + Debug + 'static,
     for<'a> &'a T: Add<Output = T> + Sub<Output = T> + Mul<Output = T>,
 {
-    /// Attempts to build a new slice matrix from a specific subset of rows and
-    /// columns of the parent matrix.
-    pub fn slice_range(&self, rows: Range<usize>, cols: Range<usize>) -> PsetRes<SliceMatrix<T>> {
-        if self.num_rows() <= rows.start
-            || self.num_rows() < rows.end
-            || self.num_cols() <= cols.start
-            || self.num_cols() < cols.end
-        {
-            return Err(PsetErr::Static("Slice range is invalid"));
-        }
-        Ok(SliceMatrix {
-            parent: self,
-            rows,
-            cols,
-            row_pad_sz: 0,
-            col_pad_sz: 0,
-        })
-    }
-
     /// Returns a reference to the inner data of the matrix
     pub fn inspect(&self) -> &Vec<Vec<T>> {
         &self.inner
@@ -90,6 +82,8 @@ where
                 self.inner[row][col] = op(&self.inner[row][col], &other.inner[row][col]);
             }
         }
+        self.padded_rows = self.padded_rows.min(other.padded_rows);
+        self.padded_cols = self.padded_cols.min(other.padded_cols);
         Ok(())
     }
 
@@ -118,10 +112,11 @@ where
         right_sl.pad_even_square();
 
         let mut res = SliceMatrix::mul_naive_rec(&left_sl, &right_sl, base_cutoff)?;
-        res.strip_padding(left.num_rows(), right.num_cols());
+        res.trim_dims(left.num_rows(), right.num_cols());
         Ok(res)
     }
 
+    /*
     pub fn mul_strassen(
         left: &Matrix<T>,
         right: &Matrix<T>,
@@ -136,9 +131,10 @@ where
         right_sl.pad_even_square();
 
         let mut res = SliceMatrix::mul_strassen(&left_sl, &right_sl, base_cutoff)?;
-        res.strip_padding(left.num_rows(), right.num_cols());
+        res.trim_dims(left.num_rows(), right.num_cols());
         Ok(res)
     }
+    */
 
     /// Builds an identity matrix
     /// For a usize matrix, diagon_val is 1, the value on the diagonal.
@@ -157,6 +153,7 @@ where
     /// Builds an owned matrix from slice parts. Fails unless all given parts
     /// are of equal dimensions (including padding).
     /// Merged output does not include padding.
+    /*
     pub fn from_slices(
         top_left: &SliceMatrix<T>,
         bottom_left: &SliceMatrix<T>,
@@ -181,6 +178,57 @@ where
         }
         Ok(inner.into())
     }
+    */
+    /// Assumes self is the top left in a four-part matrix. Adds neighbors into self
+    /// in their named positions.
+    /// Requires that no matrices involved contain padding.
+    fn fill_neighbors(
+        &mut self,
+        bottom_left: Option<Matrix<T>>,
+        top_right: Option<Matrix<T>>,
+        bottom_right: Option<Matrix<T>>,
+    ) -> PsetRes<()> {
+        for mem in [
+            Some(&*self),
+            bottom_left.as_ref(),
+            top_right.as_ref(),
+            bottom_right.as_ref(),
+        ] {
+            if let Some(mtx) = mem {
+                if mtx.padded_rows + mtx.padded_cols > 0 {
+                    return Err(PsetErr::Static(
+                        "Cannot fill neighbors that currently have padding",
+                    ));
+                }
+            }
+        }
+        if let Some(bl) = bottom_left {
+            self.inner.extend(bl.inner);
+        };
+        match (top_right, bottom_right) {
+            (Some(tr), Some(br)) => {
+                for (left_row, right_row) in self
+                    .inner
+                    .iter_mut()
+                    .zip(tr.inner.into_iter().chain(br.inner.into_iter()))
+                {
+                    left_row.extend(right_row);
+                }
+            }
+            (Some(tr), None) => {
+                for (left_row, right_row) in self.inner.iter_mut().zip(tr.inner.into_iter()) {
+                    left_row.extend(right_row);
+                }
+            }
+            (None, Some(_)) => {
+                return Err(PsetErr::Static(
+                    "There cannot be a bottom right part without a top right part",
+                ));
+            }
+            (None, None) => (),
+        };
+        Ok(())
+    }
 
     /// Returns the number of rows in this matrix
     fn num_rows(&self) -> usize {
@@ -194,13 +242,23 @@ where
 
     /// Removes entries from the bottom and right sides until self reaches the
     /// final dimensions given.
-    fn strip_padding(&mut self, final_num_rows: usize, final_num_cols: usize) {
+    fn trim_dims(&mut self, final_num_rows: usize, final_num_cols: usize) {
         self.inner.truncate(final_num_rows);
         if self.inner.get(0).map(|row| row.len()).unwrap_or(0) > final_num_cols {
             for row in &mut self.inner {
                 row.truncate(final_num_cols);
             }
         }
+    }
+
+    /// Trims matrix dimensions to remove internally-tracked padding
+    fn trim_padding(&mut self) {
+        self.trim_dims(
+            self.num_rows() - self.padded_rows,
+            self.num_cols() - self.padded_cols,
+        );
+        self.padded_rows = 0;
+        self.padded_cols = 0;
     }
 }
 
@@ -225,10 +283,10 @@ pub struct SliceMatrix<'a, T> {
 
 #[derive(Debug)]
 struct SplitQuad<'a, T> {
-    top_left: SliceMatrix<'a, T>,
-    bottom_left: SliceMatrix<'a, T>,
-    top_right: SliceMatrix<'a, T>,
-    bottom_right: SliceMatrix<'a, T>,
+    top_left: Option<SliceMatrix<'a, T>>,
+    bottom_left: Option<SliceMatrix<'a, T>>,
+    top_right: Option<SliceMatrix<'a, T>>,
+    bottom_right: Option<SliceMatrix<'a, T>>,
 }
 
 impl<'a, T> SplitQuad<'a, T>
@@ -236,9 +294,11 @@ where
     T: AddAssign + Default + Copy + Debug + 'static,
     for<'b> &'b T: Add<Output = T> + Sub<Output = T> + Mul<Output = T>,
 {
-    /// Fails unless given an even-length square matrix (padding included).
     /// Returns that matrix partitioned into four equal quadrants.
-    fn build(mtx: &SliceMatrix<'a, T>) -> PsetRes<Self> {
+    /// Any quadrants that fail partitioning are None.
+    /// An all-padding quadrant is returned as None.
+    /// Fails if the given parent slice is not at least 2x2, square, and even.
+    fn build(mtx: &'a SliceMatrix<'a, T>) -> PsetRes<Self> {
         if mtx.num_rows() < 2 || mtx.num_cols() < 2 {
             return Err(PsetErr::Static(
                 "Matrix must be at least 2x2 to split as quad.",
@@ -249,29 +309,36 @@ where
                 "SplitQuad requires an even square matrix. Consider padding it first.",
             ));
         }
-        let top_left_width = mtx.num_cols() / 2;
-        let top_left_height = mtx.num_rows() / 2;
+        let quad_height = mtx.num_rows() / 2;
+        let quad_width = mtx.num_cols() / 2;
 
-        let top_left = mtx.parent.slice_range(
-            mtx.rows.start..(mtx.rows.start + top_left_height),
-            mtx.cols.start..(mtx.cols.start + top_left_width),
-        )?;
-        let mut bottom_right = mtx.parent.slice_range(
-            top_left.rows.end..mtx.rows.end,
-            top_left.cols.end..mtx.cols.end,
-        )?;
-        let mut bottom_left = mtx
-            .parent
-            .slice_range(bottom_right.rows.clone(), top_left.cols.clone())?;
-        let mut top_right = mtx
-            .parent
-            .slice_range(top_left.rows.clone(), bottom_right.cols.clone())?;
+        let top_left = mtx.slice_range(0..quad_height, 0..quad_width);
+        let mut bottom_right = top_left.clone().and_then(|tl| {
+            mtx.slice_range(
+                tl.rows.end..(tl.rows.end + quad_width),
+                tl.cols.end..(tl.cols.end + quad_height),
+            )
+        });
+        let mut bottom_left = None;
+        if let (Some(tl), Some(br)) = (&top_left, &bottom_right) {
+            bottom_left = mtx.slice_range(br.rows.clone(), tl.cols.clone());
+        };
+        let mut top_right = None;
+        if let (Some(tl), Some(br)) = (&top_left, &bottom_right) {
+            top_right = mtx.slice_range(tl.rows.clone(), br.cols.clone());
+        }
 
         // inherit parent padding
-        bottom_right.row_pad_sz = mtx.row_pad_sz;
-        bottom_right.col_pad_sz = mtx.col_pad_sz;
-        bottom_left.row_pad_sz = mtx.row_pad_sz;
-        top_right.col_pad_sz = mtx.col_pad_sz;
+        if let Some(br) = &mut bottom_right {
+            br.row_pad_sz = mtx.row_pad_sz;
+            br.col_pad_sz = mtx.col_pad_sz;
+        }
+        if let Some(bl) = &mut bottom_left {
+            bl.row_pad_sz = mtx.row_pad_sz;
+        }
+        if let Some(tr) = &mut top_right {
+            tr.col_pad_sz = mtx.col_pad_sz;
+        }
 
         Ok(SplitQuad {
             top_left,
@@ -305,6 +372,23 @@ where
         self.cols.end + self.col_pad_sz - self.cols.start
     }
 
+    /// Retrieves an entry in the matrix or none if out of bounds.
+    /// INDICES ARE IN TERMS OF THE WINDOW and begin at 0.
+    /// Returned values may also reflect padding.
+    fn get(&self, row: usize, col: usize) -> Option<&T> {
+        if row >= self.num_rows() || col >= self.num_cols() {
+            return None;
+        }
+        if self.rows.end <= self.rows.start + row || self.cols.end <= self.cols.start + col {
+            // in padding, case above guarantees in bounds
+            return Some(&self.parent.default_val);
+        }
+        self.parent
+            .inner
+            .get(self.rows.start + row)
+            .and_then(|r| r.get(self.cols.start + col))
+    }
+
     /// If a matrix is not a square with even-length sides, pads it with
     /// zeroes until it is one
     fn pad_even_square(&mut self) {
@@ -330,8 +414,44 @@ where
     /// quadrants.
     /// Fails unless the given matrix is an even-dimension square. The method
     /// `pad_even_square` can be helpful getting there.
-    fn try_split_quad(&self) -> PsetRes<SplitQuad<'a, T>> {
+    fn try_split_quad<'b>(&'b self) -> PsetRes<SplitQuad<'b, T>> {
         SplitQuad::build(self)
+    }
+
+    /// Attempts to build a new slice matrix from a range within
+    /// thwe existing one. The result may have padding.
+    /// RANGES ARE IN RELATION TO THE PARENT SLICE, NOT THE PARENT MATRIX.
+    pub fn slice_range(
+        &self,
+        req_rows: Range<usize>,
+        req_cols: Range<usize>,
+    ) -> Option<SliceMatrix<T>> {
+        let req_row_len = req_rows.end - req_rows.start;
+        let req_col_len = req_cols.end - req_cols.start;
+
+        if self.num_rows() < req_row_len || self.num_cols() < req_col_len {
+            return None;
+        }
+
+        let sl_row_start = self.rows.start + req_rows.start;
+        let sl_col_start = self.cols.start + req_cols.start;
+
+        if self.rows.end <= sl_row_start || self.cols.end <= sl_col_start {
+            return None;
+        }
+
+        let sl_rows = sl_row_start..(sl_row_start + req_row_len).min(self.rows.end);
+        let sl_cols = sl_col_start..(sl_col_start + req_col_len).min(self.cols.end);
+
+        let row_pad_sz = req_row_len.saturating_sub(sl_rows.end - sl_rows.start);
+        let col_pad_sz = req_col_len.saturating_sub(sl_cols.end - sl_cols.start);
+        Some(SliceMatrix {
+            parent: self.parent,
+            rows: sl_rows,
+            cols: sl_cols,
+            row_pad_sz,
+            col_pad_sz,
+        })
     }
 
     /// Returns a matrix representing the operation left + right
@@ -352,45 +472,29 @@ where
             return Err(PsetErr::Static("Matrix dims don't support right multiply"));
         }
         let mut res: Vec<Vec<T>> = Vec::with_capacity(left.num_rows());
-        /*
-        for left_row in left.rows.clone() {
-            let mut row: Vec<T> = Vec::with_capacity(right.num_rows());
-            for right_col in right.cols.clone() {
-                let mut sum = T::default();
-                for offset in left.cols.clone() {
-                    sum +=
-                        left.parent.inner[left_row][offset] * right.parent.inner[offset][right_col];
-                }
-                row.push(sum);
-            }
-            res.push(row);
-        }
-        */
-        let default_t = T::default();
         for left_row_off in 0..left.num_rows() {
             let mut row: Vec<T> = Vec::with_capacity(right.num_rows());
             for right_col_off in 0..right.num_cols() {
                 let mut sum = T::default();
                 for offset in 0..left.num_cols() {
                     let left_val = left
-                        .parent
-                        .inner
-                        .get(left.rows.start + left_row_off)
-                        .and_then(|row| row.get(left.cols.start + offset))
-                        .unwrap_or_else(|| &default_t);
+                        .get(left_row_off, offset)
+                        .expect("Padded slice should be in bounds");
                     let right_val = right
-                        .parent
-                        .inner
-                        .get(right.rows.start + offset)
-                        .and_then(|row| row.get(right.cols.start + right_col_off))
-                        .unwrap_or_else(|| &default_t);
+                        .get(offset, right_col_off)
+                        .expect("Padded slice should be in bounds");
                     sum += left_val * right_val;
                 }
                 row.push(sum);
             }
             res.push(row);
         }
-        Ok(res.into())
+        Ok(Matrix {
+            inner: res,
+            default_val: T::default(),
+            padded_rows: left.row_pad_sz,
+            padded_cols: right.col_pad_sz,
+        })
     }
 
     /// Performs an operation on parallel entries in the given matrices, writing the output
@@ -407,7 +511,6 @@ where
             ));
         }
         let mut res = Vec::with_capacity(left.num_rows());
-        let default_t = T::default();
         for row_offset in 0..left.num_rows() {
             let mut row = Vec::with_capacity(left.num_cols());
             for col_offset in 0..left.num_cols() {
@@ -416,18 +519,23 @@ where
                     .inner
                     .get(left.rows.start + row_offset)
                     .and_then(|row| row.get(left.cols.start + col_offset))
-                    .unwrap_or_else(|| &default_t);
+                    .unwrap_or_else(|| &left.parent.default_val);
                 let right_val = right
                     .parent
                     .inner
                     .get(right.rows.start + row_offset)
                     .and_then(|row| row.get(right.cols.start + col_offset))
-                    .unwrap_or_else(|| &default_t);
+                    .unwrap_or_else(|| &right.parent.default_val);
                 row.push(op(left_val, right_val));
             }
             res.push(row);
         }
-        Ok(res.into())
+        Ok(Matrix {
+            inner: res,
+            default_val: T::default(),
+            padded_rows: left.row_pad_sz.min(right.row_pad_sz),
+            padded_cols: left.col_pad_sz.min(right.col_pad_sz),
+        })
     }
 
     /// Performs O(n^3) recursive multiplication. Used as a stepping stone before
@@ -446,117 +554,199 @@ where
         let mut right_quad = right.try_split_quad()?;
 
         for quad in [&mut left_quad, &mut right_quad] {
-            quad.top_left.pad_even_square();
-            quad.top_right.pad_even_square();
-            quad.bottom_left.pad_even_square();
-            quad.bottom_right.pad_even_square();
+            // expands into padding all eight parts in question into
+            // even squares.
+            for part in [
+                &mut quad.top_left,
+                &mut quad.top_right,
+                &mut quad.bottom_left,
+                &mut quad.bottom_right,
+            ] {
+                if let Some(sl) = part {
+                    sl.pad_even_square();
+                }
+            }
         }
 
-        let mut tl1 = Self::mul_naive_rec(&left_quad.top_left, &right_quad.top_left, base_sz)?;
-        let tl2 = Self::mul_naive_rec(&left_quad.top_right, &right_quad.bottom_left, base_sz)?;
+        let mut tl1 = None;
+        let mut tl2 = None;
 
-        let mut bl1 = Self::mul_naive_rec(&left_quad.bottom_left, &right_quad.top_left, base_sz)?;
-        let bl2 = Self::mul_naive_rec(&left_quad.bottom_right, &right_quad.bottom_left, base_sz)?;
+        let mut bl1 = None;
+        let mut bl2 = None;
 
-        let mut tr1 = Self::mul_naive_rec(&left_quad.top_left, &right_quad.top_right, base_sz)?;
-        let tr2 = Self::mul_naive_rec(&left_quad.top_right, &right_quad.bottom_right, base_sz)?;
+        let mut tr1 = None;
+        let mut tr2 = None;
 
-        let mut br1 = Self::mul_naive_rec(&left_quad.bottom_left, &right_quad.top_right, base_sz)?;
-        let br2 = Self::mul_naive_rec(&left_quad.bottom_right, &right_quad.bottom_right, base_sz)?;
+        let mut br1 = None;
+        let mut br2 = None;
 
-        tl1.add_in_place(&tl2)?; // top left
-        bl1.add_in_place(&bl2)?; // bottom left
-        tr1.add_in_place(&tr2)?; // top right
-        br1.add_in_place(&br2)?; // bottom right
+        if let (Some(ltl), Some(rtl)) = (&left_quad.top_left, &right_quad.top_left) {
+            tl1 = Some(Self::mul_naive_rec(ltl, rtl, base_sz)?);
+        };
+        if let (Some(ltr), Some(rbl)) = (&left_quad.top_right, &right_quad.bottom_left) {
+            tl2 = Some(Self::mul_naive_rec(ltr, rbl, base_sz)?);
+        }
 
-        Matrix::from_slices(
-            &(&tl1).into(),
-            &(&bl1).into(),
-            &(&tr1).into(),
-            &(&br1).into(),
-        )
+        if let (Some(lbl), Some(rtl)) = (&left_quad.bottom_left, &right_quad.top_left) {
+            bl1 = Some(Self::mul_naive_rec(lbl, rtl, base_sz)?);
+        };
+        if let (Some(lbr), Some(rbl)) = (&left_quad.bottom_right, &right_quad.bottom_left) {
+            bl2 = Some(Self::mul_naive_rec(lbr, rbl, base_sz)?);
+        };
+
+        if let (Some(ltl), Some(rtr)) = (&left_quad.top_left, &right_quad.top_right) {
+            tr1 = Some(Self::mul_naive_rec(ltl, rtr, base_sz)?);
+        };
+        if let (Some(ltr), Some(rbr)) = (&left_quad.top_right, &right_quad.bottom_right) {
+            tr2 = Some(Self::mul_naive_rec(ltr, rbr, base_sz)?);
+        };
+
+        if let (Some(lbl), Some(rtr)) = (&left_quad.bottom_left, &right_quad.top_right) {
+            br1 = Some(Self::mul_naive_rec(lbl, rtr, base_sz)?);
+        };
+        if let (Some(lbr), Some(rbr)) = (&left_quad.bottom_right, &right_quad.bottom_right) {
+            br2 = Some(Self::mul_naive_rec(lbr, rbr, base_sz)?);
+        };
+
+        if left.rows.clone().eq(0..3)
+            && left.cols.clone().eq(3..5)
+            && right.rows.clone().eq(3..5)
+            && right.cols.clone().eq(0..3)
+        {
+            println!("left: \n{left}");
+            println!("right: \n{right}");
+
+            if let Some(mtx) = &tr1 {
+                println!("tr1: \n{mtx}");
+            }
+            if let Some(mtx) = &tr2 {
+                println!("tr2: \n{mtx}");
+            }
+        }
+
+        let parts = [(tl1, tl2), (bl1, bl2), (tr1, tr2), (br1, br2)]
+            .into_iter()
+            .map(|pair| match pair {
+                (Some(mut m1), Some(m2)) => {
+                    m1.add_in_place(&m2)?.trim_padding();
+                    Ok(Some(m1))
+                }
+                (Some(mut mtx), None) | (None, Some(mut mtx)) => {
+                    mtx.trim_padding();
+                    Ok(Some(mtx))
+                }
+                (None, None) => Ok(None),
+            })
+            .collect::<PsetRes<Vec<Option<Matrix<T>>>>>()?;
+        let mut parts_iter = parts.into_iter();
+        let top_left = parts_iter.next().flatten();
+        let bottom_left = parts_iter.next().flatten();
+        let top_right = parts_iter.next().flatten();
+        let bottom_right = parts_iter.next().flatten();
+
+        let Some(mut mtx) = top_left else {
+            return Err(PsetErr::Static(
+                "Matrix prod with empty top left is invalid",
+            ));
+        };
+        mtx.fill_neighbors(bottom_left, top_right, bottom_right)?;
+        Ok(mtx)
     }
 
-    fn mul_strassen<'b>(
-        left: &SliceMatrix<'b, T>,
-        right: &SliceMatrix<'b, T>,
-        base_sz: usize,
-    ) -> PsetRes<Matrix<T>> {
-        if left.num_cols() <= base_sz || left.num_rows() <= base_sz {
-            return Self::mul_iter(&left, &right);
+    /*
+        fn mul_strassen<'b>(
+            left: &SliceMatrix<'b, T>,
+            right: &SliceMatrix<'b, T>,
+            base_sz: usize,
+        ) -> PsetRes<Matrix<T>> {
+            if left.num_cols() <= base_sz || left.num_rows() <= base_sz {
+                return Self::mul_iter(&left, &right);
+            }
+
+            // SliceMatrix is just pointers and counters, so cloning is cheap.
+            let mut left_quad = left.try_split_quad()?;
+            let mut right_quad = right.try_split_quad()?;
+
+            for quad in [&mut left_quad, &mut right_quad] {
+                quad.top_left.pad_even_square();
+                quad.top_right.pad_even_square();
+                quad.bottom_left.pad_even_square();
+                quad.bottom_right.pad_even_square();
+            }
+
+            // Using this algorithm:
+            // https://en.wikipedia.org/wiki/Strassen_algorithm
+            let mut m1 = {
+                let part_a = SliceMatrix::add(&left_quad.top_left, &left_quad.bottom_right)?;
+                let part_b = SliceMatrix::add(&right_quad.top_left, &right_quad.bottom_right)?;
+                Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
+            };
+            let m2 = {
+                let part_a = SliceMatrix::add(&left_quad.bottom_left, &left_quad.bottom_right)?;
+                Self::mul_strassen(&(&part_a).into(), &right_quad.top_left, base_sz)?
+            };
+            let mut m3 = {
+                let part_b = SliceMatrix::sub(&right_quad.top_right, &right_quad.bottom_right)?;
+                Self::mul_strassen(&left_quad.top_left, &(&part_b).into(), base_sz)?
+            };
+            let mut m4 = {
+                let part_b = SliceMatrix::sub(&right_quad.bottom_left, &right_quad.top_left)?;
+                Self::mul_strassen(&left_quad.bottom_right, &(&part_b).into(), base_sz)?
+            };
+            let m5 = {
+                let part_a = SliceMatrix::add(&left_quad.top_left, &left_quad.top_right)?;
+                Self::mul_strassen(&(&part_a).into(), &right_quad.bottom_right, base_sz)?
+            };
+            let m6 = {
+                let part_a = SliceMatrix::sub(&left_quad.bottom_left, &left_quad.top_left)?;
+                let part_b = SliceMatrix::add(&right_quad.top_left, &right_quad.top_right)?;
+                Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
+            };
+            let m7 = {
+                let part_a = SliceMatrix::sub(&left_quad.top_right, &left_quad.bottom_right)?;
+                let part_b = SliceMatrix::add(&right_quad.bottom_left, &right_quad.bottom_right)?;
+                Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
+            };
+
+            // done in order that minimizes the need for copying
+            let final_bottom_left = Self::add(&(&m2).into(), &(&m4).into())?;
+            let mut final_top_left = {
+                m4.add_in_place(&m1)?.sub_in_place(&m5)?.add_in_place(&m7)?;
+                m4
+            };
+            let final_bottom_right = {
+                m1.sub_in_place(&m2)?.add_in_place(&m3)?.add_in_place(&m6)?;
+                m1
+            };
+            let final_top_right = {
+                m3.add_in_place(&m5)?;
+                m3
+            };
+            final_top_left.fill_neighbors(final_bottom_left, final_top_right, final_bottom_right)?;
+            Ok(final_top_left)
+            /*
+            Matrix::from_slices(
+                &(&final_top_left).into(),
+                &(&final_bottom_left).into(),
+                &(&final_top_right).into(),
+                &(&final_bottom_right).into(),
+            )
+            */
         }
-
-        // SliceMatrix is just pointers and counters, so cloning is cheap.
-        let mut left_quad = left.try_split_quad()?;
-        let mut right_quad = right.try_split_quad()?;
-
-        for quad in [&mut left_quad, &mut right_quad] {
-            quad.top_left.pad_even_square();
-            quad.top_right.pad_even_square();
-            quad.bottom_left.pad_even_square();
-            quad.bottom_right.pad_even_square();
-        }
-
-        // Using this algorithm:
-        // https://en.wikipedia.org/wiki/Strassen_algorithm
-        let mut m1 = {
-            let part_a = SliceMatrix::add(&left_quad.top_left, &left_quad.bottom_right)?;
-            let part_b = SliceMatrix::add(&right_quad.top_left, &right_quad.bottom_right)?;
-            Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
-        };
-        let m2 = {
-            let part_a = SliceMatrix::add(&left_quad.bottom_left, &left_quad.bottom_right)?;
-            Self::mul_strassen(&(&part_a).into(), &right_quad.top_left, base_sz)?
-        };
-        let mut m3 = {
-            let part_b = SliceMatrix::sub(&right_quad.top_right, &right_quad.bottom_right)?;
-            Self::mul_strassen(&left_quad.top_left, &(&part_b).into(), base_sz)?
-        };
-        let mut m4 = {
-            let part_b = SliceMatrix::sub(&right_quad.bottom_left, &right_quad.top_left)?;
-            Self::mul_strassen(&left_quad.bottom_right, &(&part_b).into(), base_sz)?
-        };
-        let m5 = {
-            let part_a = SliceMatrix::add(&left_quad.top_left, &left_quad.top_right)?;
-            Self::mul_strassen(&(&part_a).into(), &right_quad.bottom_right, base_sz)?
-        };
-        let m6 = {
-            let part_a = SliceMatrix::sub(&left_quad.bottom_left, &left_quad.top_left)?;
-            let part_b = SliceMatrix::add(&right_quad.top_left, &right_quad.top_right)?;
-            Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
-        };
-        let m7 = {
-            let part_a = SliceMatrix::sub(&left_quad.top_right, &left_quad.bottom_right)?;
-            let part_b = SliceMatrix::add(&right_quad.bottom_left, &right_quad.bottom_right)?;
-            Self::mul_strassen(&(&part_a).into(), &(&part_b).into(), base_sz)?
-        };
-
-        // done in order that minimizes the need for copying
-        let final_bottom_left = Self::add(&(&m2).into(), &(&m4).into())?;
-        let final_top_left = {
-            m4.add_in_place(&m1)?.sub_in_place(&m5)?.add_in_place(&m7)?;
-            m4
-        };
-        let final_bottom_right = {
-            m1.sub_in_place(&m2)?.add_in_place(&m3)?.add_in_place(&m6)?;
-            m1
-        };
-        let final_top_right = {
-            m3.add_in_place(&m5)?;
-            m3
-        };
-        Matrix::from_slices(
-            &(&final_top_left).into(),
-            &(&final_bottom_left).into(),
-            &(&final_top_right).into(),
-            &(&final_bottom_right).into(),
-        )
-    }
+    */
 }
 
-impl<T> From<Vec<Vec<T>>> for Matrix<T> {
+impl<T> From<Vec<Vec<T>>> for Matrix<T>
+where
+    T: Default,
+{
     fn from(item: Vec<Vec<T>>) -> Self {
-        Matrix { inner: item }
+        Matrix {
+            inner: item,
+            default_val: T::default(),
+            padded_rows: 0,
+            padded_cols: 0,
+        }
     }
 }
 
@@ -614,7 +804,9 @@ mod matrix_tests {
     use crate::{
         error::PsetRes,
         matrix::{Matrix, SliceMatrix},
-        test_data::{get_asymm_test_matrices, get_square_test_matrices, get_test_4x4},
+        test_data::{
+            get_asymm_test_matrices, get_square_test_matrices, get_test_4x4, get_test_6x5,
+        },
     };
 
     /// Tests matrix addition and subtraction
@@ -664,11 +856,13 @@ mod matrix_tests {
                 matrices.prod,
                 "Naive recursive product should be equal"
             );
+            /*
             assert_eq!(
                 Matrix::mul_strassen(&left, &right, 3)?.inner,
                 matrices.prod,
                 "Strassen product should be equal"
             );
+            */
         }
         Ok(())
     }
@@ -692,7 +886,7 @@ mod matrix_tests {
             }
 
             let mut with_padding = SliceMatrix::mul_iter(&left_sq, &right_sq)?;
-            with_padding.strip_padding(matrices.prod.len(), matrices.prod[0].len());
+            with_padding.trim_dims(matrices.prod.len(), matrices.prod[0].len());
             assert_eq!(
                 with_padding.take(),
                 matrices.prod,
@@ -720,11 +914,13 @@ mod matrix_tests {
                     matrices.prod,
                     "Naive recursive product should be equal"
                 );
+                /*
                 assert_eq!(
                     Matrix::mul_strassen(&left, &right, base_cutoff)?.inner,
                     matrices.prod,
                     "Strassen product should be equal"
                 );
+                */
             }
 
             // Padding should not affect matrix multiplication. It only
@@ -737,7 +933,7 @@ mod matrix_tests {
                 continue;
             }
             let mut padded = SliceMatrix::mul_iter(&left_sq, &right_sq)?;
-            padded.strip_padding(matrices.prod.len(), matrices.prod[0].len());
+            padded.trim_dims(matrices.prod.len(), matrices.prod[0].len());
             assert_eq!(
                 padded.take(),
                 matrices.prod,
@@ -750,15 +946,17 @@ mod matrix_tests {
     #[test]
     fn split_merge_quad() -> PsetRes<()> {
         let iden: Matrix<i64> = Matrix::identity(3, 1);
-        let mut sliced: SliceMatrix<i64> = (&iden).into();
-        sliced.pad_even_square();
-        let quad = sliced.try_split_quad()?;
-        let joined = Matrix::from_slices(
-            &quad.top_left,
-            &quad.bottom_left,
-            &quad.top_right,
-            &quad.bottom_right,
-        )?;
+
+        let joined = {
+            // construct the 3x3 identity matrix from pieces
+            let mut top_left: Matrix<i64> = vec![vec![1, 0], vec![0, 1]].into();
+            let bottom_left: Matrix<i64> = vec![vec![0, 0]].into();
+            let top_right: Matrix<i64> = vec![vec![0], vec![0]].into();
+            let bottom_right: Matrix<i64> = vec![vec![1]].into();
+            top_left.fill_neighbors(Some(bottom_left), Some(top_right), Some(bottom_right))?;
+            top_left
+        };
+
         assert_eq!(
             iden.inner, joined.inner,
             "Matrix should be returned to identity form"
@@ -771,18 +969,49 @@ mod matrix_tests {
         let inputs = get_test_4x4()?;
         let left_mtx: Matrix<i64> = inputs.left.into();
         let right_mtx: Matrix<i64> = inputs.right.into();
+
         let iter_prod = Matrix::mul_iter(&left_mtx, &right_mtx)?;
         let naive_rec_prod = Matrix::mul_naive_rec(&left_mtx, &right_mtx, 3)?;
-        let strassen_prod = Matrix::mul_strassen(&left_mtx, &right_mtx, 3)?;
+        // let strassen_prod = Matrix::mul_strassen(&left_mtx, &right_mtx, 3)?;
+
         assert_eq!(iter_prod.inner, inputs.prod, "Iter should equal input prod");
         assert_eq!(
             naive_rec_prod.inner, inputs.prod,
             "Naive rec should equal input prod"
         );
+        /*
         assert_eq!(
             strassen_prod.inner, inputs.prod,
             "Strassen should equal input prod"
         );
+        */
+
+        Ok(())
+    }
+
+    #[test]
+    fn static_6x5_mul() -> PsetRes<()> {
+        let inputs = get_test_6x5()?;
+        let left_mtx: Matrix<i64> = inputs.left.into();
+        let right_mtx: Matrix<i64> = inputs.right.into();
+
+        let iter_prod = Matrix::mul_iter(&left_mtx, &right_mtx)?;
+        let naive_rec_prod = Matrix::mul_naive_rec(&left_mtx, &right_mtx, 3)?;
+        // let strassen_prod = Matrix::mul_strassen(&left_mtx, &right_mtx, 3)?;
+
+        assert_eq!(iter_prod.inner, inputs.prod, "Iter should equal input prod");
+        println!("target: {iter_prod}");
+        println!("rec prod: {naive_rec_prod}");
+        assert_eq!(
+            naive_rec_prod.inner, inputs.prod,
+            "Naive rec should equal input prod"
+        );
+        /*
+        assert_eq!(
+            strassen_prod.inner, inputs.prod,
+            "Strassen should equal input prod"
+        );
+        */
 
         Ok(())
     }

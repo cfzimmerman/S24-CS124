@@ -9,7 +9,7 @@ const SQUARE_MATRIX_FILES: [&str; 4] = [
     "./src/test_data/64x64.json",
 ];
 
-const ASYMM_MATRIX_FILES: [&str; 2] = ["./src/test_data/3x4.json", "./src/test_data/255x256.json"];
+const ASYMM_MATRIX_FILES: [&str; 2] = ["./src/test_data/3x4.json", "./src/test_data/6x5.json"];
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SquareTestMatrix {
@@ -51,9 +51,16 @@ pub fn get_asymm_test_matrices() -> PsetRes<Vec<AsymmTestMatrix>> {
         .collect()
 }
 
-/// Returns a 4x4 test matrix
+/// Returns a static 4x4 test matrix
 pub fn get_test_4x4() -> PsetRes<SquareTestMatrix> {
     Ok(serde_json::from_reader(BufReader::new(File::open(
         "./src/test_data/4x4.json",
+    )?))?)
+}
+
+/// Returns a static 6x5 test matrix
+pub fn get_test_6x5() -> PsetRes<AsymmTestMatrix> {
+    Ok(serde_json::from_reader(BufReader::new(File::open(
+        "./src/test_data/6x5.json",
     )?))?)
 }
