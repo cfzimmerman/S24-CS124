@@ -10,6 +10,82 @@ pub struct Matrix<T> {
     inner: Vec<Vec<T>>,
 }
 
+/// Manages operations for adding and removing matrix padding.
+#[derive(Debug)]
+struct PadPow2 {
+    rows_init_ct: usize,
+    cols_init_ct: usize,
+}
+
+impl PadPow2 {
+    /// Pads the given matrix so that its dimensions are square and the minimum
+    /// power of two possible by only adding rows and columns of default values.
+    pub fn new<T>(mtx: &mut Matrix<T>) -> Self
+    where
+        T: Default + Clone + Copy,
+    {
+        let pp2 = PadPow2 {
+            rows_init_ct: mtx.num_rows(),
+            cols_init_ct: mtx.num_cols(),
+        };
+        Self::pad_pow2(mtx);
+        pp2
+    }
+
+    /// Undoes padding from the matrix.
+    pub fn undo<T>(&self, mtx: &mut Matrix<T>) {
+        Self::trim_dims(mtx, self.rows_init_ct, self.cols_init_ct);
+    }
+
+    /// Returns the minimum number `n` such that `num <= 2^n`
+    fn round_up_nearest_pow2(num: usize) -> u32 {
+        (num as f64).log2().ceil() as u32
+    }
+
+    /// Pads self with zeroes to the bottom and right so that its dimensions
+    /// are a power of 2.
+    pub fn pad_pow2<T>(mtx: &mut Matrix<T>)
+    where
+        T: Default + Clone + Copy,
+    {
+        let max_dim = mtx.num_rows().max(mtx.num_cols());
+        let add_rows = 2usize.pow(Self::round_up_nearest_pow2(max_dim)) - mtx.num_rows();
+        let add_cols = 2usize.pow(Self::round_up_nearest_pow2(max_dim)) - mtx.num_cols();
+        for curr_row in &mut mtx.inner {
+            curr_row.extend(vec![T::default(); add_cols]);
+            debug_assert!((curr_row.len() as f64).log2().fract() == 0.);
+        }
+        for _ in 0..add_rows {
+            mtx.inner
+                .push(vec![T::default(); mtx.num_cols() + add_cols]);
+        }
+        debug_assert!((mtx.inner.len() as f64).log2().fract() == 0.);
+    }
+
+    /// Removes entries from the bottom and right sides until self reaches the
+    /// final dimensions given.
+    pub fn trim_dims<T>(mtx: &mut Matrix<T>, final_num_rows: usize, final_num_cols: usize) {
+        mtx.inner.truncate(final_num_rows);
+        if mtx.inner.get(0).map(|row| row.len()).unwrap_or(0) > final_num_cols {
+            for row in &mut mtx.inner {
+                row.truncate(final_num_cols);
+            }
+        }
+    }
+}
+
+impl<T> Matrix<T> {
+    /// Returns the number of rows in this matrix
+    fn num_rows(&self) -> usize {
+        self.inner.len()
+    }
+
+    /// Returns the number of columns in this matrix
+    fn num_cols(&self) -> usize {
+        self.inner.get(0).map(|arr| arr.len()).unwrap_or(0)
+    }
+}
+
 impl<T> Matrix<T>
 where
     T: AddAssign + Default + Copy + Debug + 'static,
@@ -43,20 +119,16 @@ where
         if base_cutoff < 3 {
             return Err(PsetErr::Static("mul_naive_rec base_cutoff must exceed 2"));
         }
-
-        let (l_init_rows, l_init_cols) = (left.num_rows(), left.num_cols());
-        let (r_init_rows, r_init_cols) = (right.num_rows(), right.num_cols());
-        left.pad_pow2();
-        right.pad_pow2();
+        let left_pad = PadPow2::new(left);
+        let right_pad = PadPow2::new(right);
 
         let left_sl: SliceMatrix<T> = (&*left).into();
         let right_sl: SliceMatrix<T> = (&*right).into();
         let mut res = SliceMatrix::mul_naive_rec(&left_sl, &right_sl, base_cutoff)?;
 
-        left.trim_dims(l_init_rows, l_init_cols);
-        right.trim_dims(r_init_rows, r_init_cols);
-        res.trim_dims(l_init_rows, r_init_cols);
-
+        left_pad.undo(left);
+        right_pad.undo(right);
+        PadPow2::trim_dims(&mut res, left_pad.rows_init_ct, right_pad.cols_init_ct);
         Ok(res)
     }
 
@@ -108,16 +180,6 @@ where
         Ok(self)
     }
 
-    /// Returns the number of rows in this matrix
-    fn num_rows(&self) -> usize {
-        self.inner.len()
-    }
-
-    /// Returns the number of columns in this matrix
-    fn num_cols(&self) -> usize {
-        self.inner.get(0).map(|arr| arr.len()).unwrap_or(0)
-    }
-
     /// Performs actions for every parallel entry between the two matrices, storing
     /// the results of operations back in self.
     fn op_one_to_one_in_place(&mut self, other: &Matrix<T>, op: fn(&T, &T) -> T) -> PsetRes<()> {
@@ -133,37 +195,6 @@ where
             }
         }
         Ok(())
-    }
-
-    /// Pads self with zeroes to the bottom and right so that its dimensions
-    /// are a power of 2.
-    fn pad_pow2(&mut self) {
-        fn round_up_nearest_pow2(num: usize) -> u32 {
-            (num as f64).log2().ceil() as u32
-        }
-        let max_dim = self.num_rows().max(self.num_cols());
-        let add_rows = 2usize.pow(round_up_nearest_pow2(max_dim)) - self.num_rows();
-        let add_cols = 2usize.pow(round_up_nearest_pow2(max_dim)) - self.num_cols();
-        for curr_row in &mut self.inner {
-            curr_row.extend(vec![T::default(); add_cols]);
-            debug_assert!((curr_row.len() as f64).log2().fract() == 0.);
-        }
-        for _ in 0..add_rows {
-            self.inner
-                .push(vec![T::default(); self.num_cols() + add_cols]);
-        }
-        debug_assert!((self.inner.len() as f64).log2().fract() == 0.);
-    }
-
-    /// Removes entries from the bottom and right sides until self reaches the
-    /// final dimensions given.
-    fn trim_dims(&mut self, final_num_rows: usize, final_num_cols: usize) {
-        self.inner.truncate(final_num_rows);
-        if self.inner.get(0).map(|row| row.len()).unwrap_or(0) > final_num_cols {
-            for row in &mut self.inner {
-                row.truncate(final_num_cols);
-            }
-        }
     }
 
     /// Assumes self is the top left in a four-part matrix. Adds neighbors into self
@@ -438,24 +469,6 @@ where
         let mut br1 = Self::mul_naive_rec(&left_quad.bottom_left, &right_quad.top_right, base_sz)?;
         let br2 = Self::mul_naive_rec(&left_quad.bottom_right, &right_quad.bottom_right, base_sz)?;
 
-        /*
-        if left.rows.clone().eq(0..3)
-            && left.cols.clone().eq(3..5)
-            && right.rows.clone().eq(3..5)
-            && right.cols.clone().eq(0..3)
-        {
-            println!("left: \n{left}");
-            println!("right: \n{right}");
-
-            if let Some(mtx) = &tr1 {
-                println!("tr1: \n{mtx}");
-            }
-            if let Some(mtx) = &tr2 {
-                println!("tr2: \n{mtx}");
-            }
-        }
-        */
-
         tl1.add_in_place(&tl2)?;
         bl1.add_in_place(&bl2)?;
         tr1.add_in_place(&tr2)?;
@@ -575,8 +588,7 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "rows: {:?}, cols: {:?}", self.rows, self.cols)?;
         for row_ind in self.rows.clone() {
-            let row = self.parent.inner[row_ind][self.cols.clone()].to_vec();
-            writeln!(f, "{:?}", row)?;
+            writeln!(f, "{:?}", &self.parent.inner[row_ind][self.cols.clone()])?;
         }
         Ok(())
     }
@@ -598,7 +610,7 @@ where
 mod matrix_tests {
     use crate::{
         error::PsetRes,
-        matrix::Matrix,
+        matrix::{Matrix, PadPow2},
         test_data::{
             get_asymm_test_matrices, get_square_test_matrices, get_test_4x4, get_test_6x5,
         },
@@ -772,7 +784,7 @@ mod matrix_tests {
         let mut m4x5 = Matrix::identity(5, 1u8);
         m4x5.inner.pop();
         // Now it's a 4 x 5 matrix
-        m4x5.pad_pow2();
+        PadPow2::pad_pow2(&mut m4x5);
         assert_eq!(
             m4x5.inner.len(),
             8,
