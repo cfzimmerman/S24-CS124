@@ -11,7 +11,5 @@ git checkout $1 &&
 	cd .. &&
 	git reset --hard origin/main &&
 	rm -rf $(ls | grep -v $2) &&
-	cd $2 &&
-	mv . .. &&
-	cd .. &&
+	mv "$2"/* . &&
 	rmdir $2
