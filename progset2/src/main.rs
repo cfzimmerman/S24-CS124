@@ -3,7 +3,7 @@ use progset2::{
     error::PsetRes,
     mtx::{
         cli::{CliInput, MtxCli},
-        experiments::BaseExperiment,
+        experiments::{BaseExperiment, TriangleExperiment},
         matrix::Matrix,
     },
 };
@@ -13,7 +13,7 @@ use std::{
     io::{stdin, stdout, BufReader},
 };
 
-const DEFAULT_BASE: usize = 3;
+const DEFAULT_BASE: usize = 64;
 type InputT = i32;
 
 fn main() -> PsetRes<()> {
@@ -39,7 +39,18 @@ fn main() -> PsetRes<()> {
             input_file,
             output_file,
         } => {
+            println!("Running base experiment");
             let mut expr = BaseExperiment::from_cfg(&input_file)?;
+            let mut csv = Writer::from_path(&output_file)?;
+            expr.run(&mut csv)?;
+            return Ok(());
+        }
+        CliInput::TriangleExperiment {
+            input_file,
+            output_file,
+        } => {
+            println!("Running triangle experiment");
+            let expr = TriangleExperiment::from_cfg(&input_file)?;
             let mut csv = Writer::from_path(&output_file)?;
             expr.run(&mut csv)?;
             return Ok(());

@@ -25,4 +25,7 @@ pub enum PsetErr {
 
     #[error(transparent)]
     Csv(#[from] csv::Error),
+
+    #[error(transparent)]
+    WeightedRng(#[from] rand::distributions::WeightedError),
 }

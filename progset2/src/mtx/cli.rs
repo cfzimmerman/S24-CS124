@@ -26,6 +26,10 @@ pub enum CliInput {
         input_file: PathBuf,
         output_file: PathBuf,
     },
+    TriangleExperiment {
+        input_file: PathBuf,
+        output_file: PathBuf,
+    },
 }
 
 /// Manages CLI interaction with user input.
@@ -55,7 +59,11 @@ impl MtxCli {
 
         Mode = 3, base experiments:
         ./** 3 [input file path] [output file path]
-        ex: ./** 3 ./experiment.json ./result.csv"#;
+        ex: ./** 3 ./base_experiment.json ./base_result.csv
+
+        Mode = 4, triangle experiments:
+        ./** 4 [input file path] [output file path] 
+        ex: ./** 4 ./tri_experiment.json ./tri_result.csv"#;
 
         eprintln!("{msg}");
         PsetErr::InvalidInput
@@ -88,7 +96,7 @@ impl MtxCli {
     pub fn parse_args(args: &[String]) -> PsetRes<CliInput> {
         let mode = Self::get_usize(&args, 1)?;
         let mut dim = 0;
-        if mode != 3 {
+        if mode < 3 {
             dim = Self::get_usize(&args, 2)?;
         };
 
@@ -104,6 +112,10 @@ impl MtxCli {
                 file_path: Self::get_path(&args, 4)?,
             }),
             3 => Ok(CliInput::BaseExperiment {
+                input_file: Self::get_path(&args, 2)?,
+                output_file: Self::get_path(&args, 3)?,
+            }),
+            4 => Ok(CliInput::TriangleExperiment {
                 input_file: Self::get_path(&args, 2)?,
                 output_file: Self::get_path(&args, 3)?,
             }),
