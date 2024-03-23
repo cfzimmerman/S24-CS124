@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod matrix;
 mod padding;
 mod slice_matrix;

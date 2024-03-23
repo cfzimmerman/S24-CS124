@@ -11,8 +11,14 @@ pub enum PsetErr {
     #[error("Context error: {0}")]
     Cxt(String),
 
+    #[error("Unrecognized CLI input")]
+    InvalidInput,
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    ParseInt(#[from] std::num::ParseIntError),
 
     #[cfg(test)]
     #[error(transparent)]

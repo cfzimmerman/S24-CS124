@@ -47,6 +47,7 @@ if len(sys.argv) == 4:
 elif len(sys.argv) == 5:
     gen_asymmetric()
 else:
+    print("Produces matrices and their arithmetic results for use in tests.\n")
     print(
         "Generate square matrices:\n\
         ***.py [int dimension] [int min val] [int max val]")
