@@ -19,9 +19,14 @@ impl<T> Matrix<T> {
 
     /// Returns the number of columns in this matrix
     pub fn num_cols(&self) -> usize {
-        self.inner.get(0).map(|arr| arr.len()).unwrap_or(0)
+        self.inner.first().map(|arr| arr.len()).unwrap_or(0)
     }
 }
+
+/// Expresses the signature of a recursive matrix multiplication
+/// algorithm as used in this implementation. Allows some code
+/// reuse between naive and Strassen recursive multiplication.
+type RecMatrixMulAlgo<T> = fn(&SliceMatrix<T>, &SliceMatrix<T>, usize) -> PsetRes<Matrix<T>>;
 
 impl<T> Matrix<T>
 where
@@ -72,7 +77,7 @@ where
         left: &mut Matrix<T>,
         right: &mut Matrix<T>,
         base_cutoff: usize,
-        algo: fn(&SliceMatrix<T>, &SliceMatrix<T>, usize) -> PsetRes<Matrix<T>>,
+        algo: RecMatrixMulAlgo<T>,
     ) -> PsetRes<Matrix<T>> {
         if base_cutoff < 3 {
             return Err(PsetErr::Static("rec_mul base_cutoff must exceed 2"));
@@ -94,7 +99,6 @@ where
     /// For a usize matrix, diagon_val is 1, the value on the diagonal.
     pub fn identity(dim: usize, diagon_val: T) -> Matrix<T> {
         (0..dim)
-            .into_iter()
             .map(|row_ind| {
                 let mut cols = vec![T::default(); dim];
                 cols[row_ind] = diagon_val;

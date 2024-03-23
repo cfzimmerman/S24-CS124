@@ -56,7 +56,7 @@ impl PadPow2 {
     /// final dimensions given.
     pub fn trim_dims<T>(mtx: &mut Matrix<T>, final_num_rows: usize, final_num_cols: usize) {
         mtx.inner.truncate(final_num_rows);
-        if mtx.inner.get(0).map(|row| row.len()).unwrap_or(0) > final_num_cols {
+        if mtx.num_cols() > final_num_cols {
             for row in &mut mtx.inner {
                 row.truncate(final_num_cols);
             }

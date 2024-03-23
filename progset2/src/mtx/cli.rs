@@ -94,30 +94,30 @@ impl MtxCli {
 
     /// Reads user CLI input and attempts to match that to a CliInput variant.
     pub fn parse_args(args: &[String]) -> PsetRes<CliInput> {
-        let mode = Self::get_usize(&args, 1)?;
+        let mode = Self::get_usize(args, 1)?;
         let mut dim = 0;
         if mode < 3 {
-            dim = Self::get_usize(&args, 2)?;
+            dim = Self::get_usize(args, 2)?;
         };
 
         match mode {
             0 => Ok(CliInput::Grading {
                 dim,
-                file_path: Self::get_path(&args, 3)?,
+                file_path: Self::get_path(args, 3)?,
             }),
             1 => Ok(CliInput::Stdin { dim }),
             2 => Ok(CliInput::Cutoff {
                 dim,
-                base_cutoff: Self::get_usize(&args, 3)?,
-                file_path: Self::get_path(&args, 4)?,
+                base_cutoff: Self::get_usize(args, 3)?,
+                file_path: Self::get_path(args, 4)?,
             }),
             3 => Ok(CliInput::BaseExperiment {
-                input_file: Self::get_path(&args, 2)?,
-                output_file: Self::get_path(&args, 3)?,
+                input_file: Self::get_path(args, 2)?,
+                output_file: Self::get_path(args, 3)?,
             }),
             4 => Ok(CliInput::TriangleExperiment {
-                input_file: Self::get_path(&args, 2)?,
-                output_file: Self::get_path(&args, 3)?,
+                input_file: Self::get_path(args, 2)?,
+                output_file: Self::get_path(args, 3)?,
             }),
             other => {
                 eprintln!("Unrecognized mode: {other}. Modes 0 and 1 are supported");

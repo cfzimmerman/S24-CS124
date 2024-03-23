@@ -143,12 +143,12 @@ impl TriangleExperiment {
     /// a graph where vertices have a `prob_edge` likelihood of having an
     /// edge between them.
     fn edge_graph(dim: usize, prob_edge: f32) -> PsetRes<Matrix<i32>> {
-        if prob_edge < 0. || 1. < prob_edge {
+        if !(0. ..=1.).contains(&prob_edge) {
             return Err(PsetErr::Static("probability of an edge must be in [0, 1]"));
         }
         let choices = [0, 1];
         let weights = [1. - prob_edge, prob_edge];
-        let range = WeightedIndex::new(&weights)?;
+        let range = WeightedIndex::new(weights)?;
         let mut rng = thread_rng();
 
         let mut mtx: Vec<Vec<i32>> = Vec::with_capacity(dim);

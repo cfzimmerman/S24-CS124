@@ -110,7 +110,7 @@ where
         base_sz: usize,
     ) -> PsetRes<Matrix<T>> {
         if left.num_cols() <= base_sz || left.num_rows() <= base_sz {
-            return Self::mul_iter(&left, &right);
+            return Self::mul_iter(left, right);
         }
 
         let left_quad = left.try_split_quad()?;
@@ -209,7 +209,7 @@ where
     /// quadrants.
     /// Fails unless the given matrix is an even-dimension square. The method
     /// `pad_even_square` can be helpful getting there.
-    fn try_split_quad<'b>(&'b self) -> PsetRes<SplitQuad<'b, T>> {
+    fn try_split_quad(&self) -> PsetRes<SplitQuad<T>> {
         SplitQuad::build(self)
     }
 
@@ -334,8 +334,8 @@ impl<'a, T> From<&'a Matrix<T>> for SliceMatrix<'a, T> {
     fn from(parent: &'a Matrix<T>) -> Self {
         SliceMatrix {
             parent,
-            rows: 0..parent.inner.len(),
-            cols: 0..parent.inner.get(0).map(|row| row.len()).unwrap_or(0),
+            rows: 0..parent.num_rows(),
+            cols: 0..parent.num_cols(),
         }
     }
 }

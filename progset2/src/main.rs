@@ -41,7 +41,7 @@ fn main() -> PsetRes<()> {
         } => {
             println!("Running base experiment");
             let mut expr = BaseExperiment::from_cfg(&input_file)?;
-            let mut csv = Writer::from_path(&output_file)?;
+            let mut csv = Writer::from_path(output_file)?;
             expr.run(&mut csv)?;
             return Ok(());
         }
@@ -51,7 +51,7 @@ fn main() -> PsetRes<()> {
         } => {
             println!("Running triangle experiment");
             let expr = TriangleExperiment::from_cfg(&input_file)?;
-            let mut csv = Writer::from_path(&output_file)?;
+            let mut csv = Writer::from_path(output_file)?;
             expr.run(&mut csv)?;
             return Ok(());
         }
