@@ -22,6 +22,10 @@ pub enum CliInput {
         base_cutoff: usize,
         file_path: PathBuf,
     },
+    BaseExperiment {
+        input_file: PathBuf,
+        output_file: PathBuf,
+    },
 }
 
 /// Manages CLI interaction with user input.
@@ -47,7 +51,11 @@ impl MtxCli {
 
         Mode = 2, cutoff variant:
         ./** 2 [uint dimension] [uint > 2 cutoff] [file path]
-        ex: ./** 2 4 3 m4x4.txt"#;
+        ex: ./** 2 4 3 m4x4.txt
+
+        Mode = 3, base experiments:
+        ./** 3 [input file path] [output file path]
+        ex: ./** 3 ./experiment.json ./result.csv"#;
 
         eprintln!("{msg}");
         PsetErr::InvalidInput
@@ -79,7 +87,10 @@ impl MtxCli {
     /// Reads user CLI input and attempts to match that to a CliInput variant.
     pub fn parse_args(args: &[String]) -> PsetRes<CliInput> {
         let mode = Self::get_usize(&args, 1)?;
-        let dim = Self::get_usize(&args, 2)?;
+        let mut dim = 0;
+        if mode != 3 {
+            dim = Self::get_usize(&args, 2)?;
+        };
 
         match mode {
             0 => Ok(CliInput::Grading {
@@ -91,6 +102,10 @@ impl MtxCli {
                 dim,
                 base_cutoff: Self::get_usize(&args, 3)?,
                 file_path: Self::get_path(&args, 4)?,
+            }),
+            3 => Ok(CliInput::BaseExperiment {
+                input_file: Self::get_path(&args, 2)?,
+                output_file: Self::get_path(&args, 3)?,
             }),
             other => {
                 eprintln!("Unrecognized mode: {other}. Modes 0 and 1 are supported");

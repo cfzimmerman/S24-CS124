@@ -16,13 +16,9 @@ pub struct SliceMatrix<'a, T> {
     cols: Range<usize>,
 }
 
-impl<'a, T> SliceMatrix<'a, T>
-where
-    T: AddAssign + Default + Copy + Debug + 'static,
-    for<'b> &'b T: Add<Output = T> + Sub<Output = T> + Mul<Output = T>,
-{
+impl<'a, T> SliceMatrix<'a, T> {
     /// Returns the number of rows in this matrix WITH PADDING
-    fn num_rows(&self) -> usize {
+    pub fn num_rows(&self) -> usize {
         debug_assert!(
             self.rows.end <= self.parent.num_rows(),
             "Slice matrix row range should always be in bounds"
@@ -30,20 +26,26 @@ where
         self.rows.end - self.rows.start
     }
 
-    /// Returns the number of columns in this matrix WITH PADDING
-    fn num_cols(&self) -> usize {
+    /// Returns the number of columns in this matrix
+    pub fn num_cols(&self) -> usize {
         debug_assert!(
             self.cols.end <= self.parent.num_cols(),
             "Slice matrix col range should always be in bounds"
         );
         self.cols.end - self.cols.start
     }
+}
 
+impl<'a, T> SliceMatrix<'a, T>
+where
+    T: AddAssign + Default + Copy + Debug + 'static,
+    for<'b> &'b T: Add<Output = T> + Sub<Output = T> + Mul<Output = T>,
+{
     /// Retrieves an entry from a row, col in the slice.
     /// COORDS ARE RELATIVE TO THE SLICE.
     /// Ex, the top left coord in the slice matrix is 0, 0 regardless
     /// of where it falls on the parent matrix.
-    fn get(&self, req_row: usize, req_col: usize) -> Option<&T> {
+    pub fn get(&self, req_row: usize, req_col: usize) -> Option<&T> {
         let parent_row = self.rows.start + req_row;
         let parent_col = self.cols.start + req_col;
         if !self.rows.contains(&parent_row) || !self.cols.contains(&parent_col) {
@@ -55,57 +57,12 @@ where
             .and_then(|r| r.get(parent_col))
     }
 
-    fn index(&self, req_row: usize, req_col: usize) -> &T {
+    /// Indexes into the requested row and column of the slice. Indices
+    /// are relative to the slice, not the parent matrix.
+    /// Panics if the indices are out of bounds of the slice dimensions.
+    pub fn index(&self, req_row: usize, req_col: usize) -> &T {
         self.get(req_row, req_col)
             .expect("Accessed out of bounds slice index")
-    }
-
-    /// If successful, returns the slice matrix partitioned into four equal
-    /// quadrants.
-    /// Fails unless the given matrix is an even-dimension square. The method
-    /// `pad_even_square` can be helpful getting there.
-    fn try_split_quad<'b>(&'b self) -> PsetRes<SplitQuad<'b, T>> {
-        SplitQuad::build(self)
-    }
-
-    /// Attempts to build a new slice matrix from a range within
-    /// the existing one.
-    /// RANGES ARE IN RELATION TO THE PARENT SLICE, NOT THE PARENT MATRIX.
-    /// Ex. Requesting a range beginning at row 0 yields row 0 of the slice
-    /// no matter where that index occurs in the parent matrix.
-    fn slice_range(
-        &self,
-        req_rows: &Range<usize>,
-        req_cols: &Range<usize>,
-    ) -> PsetRes<SliceMatrix<T>> {
-        let req_row_len = req_rows.end - req_rows.start;
-        let req_col_len = req_cols.end - req_cols.start;
-
-        if self.num_rows() < req_row_len || self.num_cols() < req_col_len {
-            return Err(PsetErr::Static(
-                "slice_range: Requested dims exceed parent slice",
-            ));
-        }
-
-        let sl_row_start = self.rows.start + req_rows.start;
-        let sl_col_start = self.cols.start + req_cols.start;
-
-        if self.rows.end <= sl_row_start || self.cols.end <= sl_col_start {
-            return Err(PsetErr::Static(
-                "slice_range: Requested start exceeds parent end",
-            ));
-        }
-
-        let sl_rows = sl_row_start..(sl_row_start + req_row_len);
-        let sl_cols = sl_col_start..(sl_col_start + req_col_len);
-        debug_assert!(sl_rows.end <= self.rows.end);
-        debug_assert!(sl_cols.end <= self.cols.end);
-
-        Ok(SliceMatrix {
-            parent: self.parent,
-            rows: sl_rows,
-            cols: sl_cols,
-        })
     }
 
     /// Returns a matrix representing the operation left + right
@@ -145,36 +102,6 @@ where
         Ok(Matrix { inner: res })
     }
 
-    /// Performs an operation on parallel entries in the given matrices, writing the output
-    /// to a new matrix. Useful for addition and subtraction.
-    /// Materializes imaginary padding into the result as T::default() values.
-    fn op_one_to_one<'b>(
-        left: &SliceMatrix<'b, T>,
-        right: &SliceMatrix<'b, T>,
-        op: fn(&T, &T) -> T,
-    ) -> PsetRes<Matrix<T>> {
-        if left.num_rows() != right.num_rows() || left.num_cols() != right.num_cols() {
-            return Err(PsetErr::Static(
-                "Cannot perform a one to one operation on matrices of different dimensions",
-            ));
-        }
-        let mut res = Vec::with_capacity(left.num_rows());
-        for row_offset in 0..left.num_rows() {
-            let mut row = Vec::with_capacity(left.num_cols());
-            for col_offset in 0..left.num_cols() {
-                // Indexing is okay because the initial check
-                // guarantees that bounds are safe, and slice indices are
-                // always in-bounds of the parent matrix.
-                row.push(op(
-                    left.index(row_offset, col_offset),
-                    right.index(row_offset, col_offset),
-                ));
-            }
-            res.push(row);
-        }
-        Ok(res.into())
-    }
-
     /// Performs O(n^3) recursive multiplication. Used as a stepping stone before
     /// Strassen's algorithm.
     pub fn mul_naive_rec<'b>(
@@ -210,13 +137,17 @@ where
         Ok(tl1)
     }
 
+    /// Performs Strassen's algorithm on the given SliceMatrix instances, switching to iterative
+    /// multiplication when sub-matrices are smaller than or equal to base_sz.
+    /// Fails if left and right are not a power of 2. Apply padding before multiplication if
+    /// needed.
     pub fn mul_strassen<'b>(
         left: &SliceMatrix<'b, T>,
         right: &SliceMatrix<'b, T>,
         base_sz: usize,
     ) -> PsetRes<Matrix<T>> {
         if left.num_cols() <= base_sz || left.num_rows() <= base_sz {
-            return Self::mul_iter(&left, &right);
+            return Self::mul_iter(left, right);
         }
 
         let left_quad = left.try_split_quad()?;
@@ -272,6 +203,84 @@ where
         };
         final_top_left.merge_neighbors(final_bottom_left, final_top_right, final_bottom_right)?;
         Ok(final_top_left)
+    }
+
+    /// If successful, returns the slice matrix partitioned into four equal
+    /// quadrants.
+    /// Fails unless the given matrix is an even-dimension square. The method
+    /// `pad_even_square` can be helpful getting there.
+    fn try_split_quad<'b>(&'b self) -> PsetRes<SplitQuad<'b, T>> {
+        SplitQuad::build(self)
+    }
+
+    /// Attempts to build a new slice matrix from a range within
+    /// the existing one.
+    /// RANGES ARE IN RELATION TO THE PARENT SLICE, NOT THE PARENT MATRIX.
+    /// Ex. Requesting a range beginning at row 0 yields row 0 of the slice
+    /// no matter where that index occurs in the parent matrix.
+    fn slice_range(
+        &self,
+        req_rows: &Range<usize>,
+        req_cols: &Range<usize>,
+    ) -> PsetRes<SliceMatrix<T>> {
+        let req_row_len = req_rows.end - req_rows.start;
+        let req_col_len = req_cols.end - req_cols.start;
+
+        if self.num_rows() < req_row_len || self.num_cols() < req_col_len {
+            return Err(PsetErr::Static(
+                "slice_range: Requested dims exceed parent slice",
+            ));
+        }
+
+        let sl_row_start = self.rows.start + req_rows.start;
+        let sl_col_start = self.cols.start + req_cols.start;
+
+        if self.rows.end <= sl_row_start || self.cols.end <= sl_col_start {
+            return Err(PsetErr::Static(
+                "slice_range: Requested start exceeds parent end",
+            ));
+        }
+
+        let sl_rows = sl_row_start..(sl_row_start + req_row_len);
+        let sl_cols = sl_col_start..(sl_col_start + req_col_len);
+        debug_assert!(sl_rows.end <= self.rows.end);
+        debug_assert!(sl_cols.end <= self.cols.end);
+
+        Ok(SliceMatrix {
+            parent: self.parent,
+            rows: sl_rows,
+            cols: sl_cols,
+        })
+    }
+
+    /// Performs an operation on parallel entries in the given matrices, writing the output
+    /// to a new matrix. Useful for addition and subtraction.
+    /// Materializes imaginary padding into the result as T::default() values.
+    fn op_one_to_one<'b>(
+        left: &SliceMatrix<'b, T>,
+        right: &SliceMatrix<'b, T>,
+        op: fn(&T, &T) -> T,
+    ) -> PsetRes<Matrix<T>> {
+        if left.num_rows() != right.num_rows() || left.num_cols() != right.num_cols() {
+            return Err(PsetErr::Static(
+                "Cannot perform a one to one operation on matrices of different dimensions",
+            ));
+        }
+        let mut res = Vec::with_capacity(left.num_rows());
+        for row_offset in 0..left.num_rows() {
+            let mut row = Vec::with_capacity(left.num_cols());
+            for col_offset in 0..left.num_cols() {
+                // Indexing is okay because the initial check
+                // guarantees that bounds are safe, and slice indices are
+                // always in-bounds of the parent matrix.
+                row.push(op(
+                    left.index(row_offset, col_offset),
+                    right.index(row_offset, col_offset),
+                ));
+            }
+            res.push(row);
+        }
+        Ok(res.into())
     }
 }
 

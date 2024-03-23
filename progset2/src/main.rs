@@ -1,7 +1,9 @@
+use csv::Writer;
 use progset2::{
     error::PsetRes,
     mtx::{
         cli::{CliInput, MtxCli},
+        experiments::BaseExperiment,
         matrix::Matrix,
     },
 };
@@ -32,6 +34,15 @@ fn main() -> PsetRes<()> {
         } => {
             base = base_cutoff;
             MtxCli::read_sq_matrices(BufReader::new(File::open(file_path)?), dim)?
+        }
+        CliInput::BaseExperiment {
+            input_file,
+            output_file,
+        } => {
+            let mut expr = BaseExperiment::from_cfg(&input_file)?;
+            let mut csv = Writer::from_path(&output_file)?;
+            expr.run(&mut csv)?;
+            return Ok(());
         }
     };
 

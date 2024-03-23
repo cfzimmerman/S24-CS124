@@ -56,6 +56,8 @@ where
         Self::mul_rec_inner(left, right, base_cutoff, SliceMatrix::mul_naive_rec)
     }
 
+    /// Computes multiplication of left * right using Strassen's algorithm, switching to
+    /// iterative multiplication for sub-matrices below the base_cutoff.
     pub fn mul_strassen(
         left: &mut Matrix<T>,
         right: &mut Matrix<T>,
