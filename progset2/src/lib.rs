@@ -1,5 +1,5 @@
 mod error;
-pub mod matrix;
+pub mod mtx;
 
 #[cfg(test)]
 mod test_data;
