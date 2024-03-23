@@ -17,5 +17,6 @@ git checkout $1 &&
 	cd .. &&
 	git reset --hard origin/main &&
 	rm -rf $(ls | grep -v $2) &&
+	git clean -fd &&
 	mv "$2"/* . &&
 	rm -r $2

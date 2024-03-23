@@ -99,15 +99,15 @@ impl MtxCli {
         }
     }
 
-    pub fn write_result<W, T>(mtx: &Matrix<T>, writer: &mut W) -> PsetRes<()>
+    /// Prints to the writer each entry on the diagonal of mtx with one entry
+    /// per line (as requested by the grading spec).
+    pub fn write_diagonal<W, T>(mtx: &Matrix<T>, writer: &mut W) -> PsetRes<()>
     where
         W: Write,
         T: Display,
     {
-        for row in &mtx.inner {
-            for entry in row {
-                writeln!(writer, "{}", entry)?;
-            }
+        for (ind, row) in mtx.inner.iter().enumerate() {
+            writeln!(writer, "{}", row[ind])?;
         }
         writer.flush()?;
         Ok(())

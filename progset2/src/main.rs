@@ -37,7 +37,7 @@ fn main() -> PsetRes<()> {
 
     let res = Matrix::mul_strassen(&mut left, &mut right, base)?;
     if grading_output {
-        MtxCli::write_result(&res, &mut stdout().lock())?;
+        MtxCli::write_diagonal(&res, &mut stdout().lock())?;
     } else {
         println!("{res}");
     }
