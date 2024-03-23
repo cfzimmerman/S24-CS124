@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Gradescope doesn't allow submitting code from sub-directories.
+# This simplifies the process of checking out into a different branch,
+# purging everything else, and moving the desired contents up to root.
+#
+# ex: `bash deploy.sh progset2-submission progset2`
+
 if [ "$1" = "main" ]; then
 	echo "Cannot deploy from main"
 	exit 1
@@ -12,4 +18,4 @@ git checkout $1 &&
 	git reset --hard origin/main &&
 	rm -rf $(ls | grep -v $2) &&
 	mv "$2"/* . &&
-	rmdir $2
+	rm -r $2
