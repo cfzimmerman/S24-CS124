@@ -92,6 +92,7 @@ impl BaseExperiment {
 struct TriangleExpRes {
     graph_dim: usize,
     edge_prob: f32,
+    trial: usize,
     num_triangles: i32,
 }
 
@@ -100,6 +101,7 @@ struct TriangleExpRes {
 #[derive(Serialize, Deserialize)]
 pub struct TriangleExperiment {
     num_vertices: usize,
+    num_trials: usize,
     edge_probabilities: Vec<f32>,
 }
 
@@ -117,24 +119,27 @@ impl TriangleExperiment {
     pub fn run(&self, csv: &mut Writer<File>) -> PsetRes<()> {
         let dim = self.num_vertices;
         for prob in self.edge_probabilities.iter().copied() {
-            println!("num_vertices: {dim}, edge_prob: {prob}");
-            // the clone is inefficient, but I don't have time right now for
-            // a more elegant solution. Good place for a future optimization.
-            let mut left = Self::edge_graph(dim, prob)?;
-            let mut right = left.clone();
-            let mut sq = Matrix::mul_strassen(&mut left, &mut right, 64)?;
-            drop(left);
-            let cube = Matrix::mul_strassen(&mut sq, &mut right, 64)?;
-            let mut diag_sum = 0;
-            for offset in 0..dim {
-                diag_sum += cube.inner[offset][offset];
+            for trial in 1..=self.num_trials {
+                println!("num_vertices: {dim}, edge_prob: {prob}, trial: {trial}");
+                // the clone is inefficient, but I don't have time right now for
+                // a more elegant solution. Good place for a future optimization.
+                let mut left = Self::edge_graph(dim, prob)?;
+                let mut right = left.clone();
+                let mut sq = Matrix::mul_strassen(&mut left, &mut right, 64)?;
+                drop(left);
+                let cube = Matrix::mul_strassen(&mut sq, &mut right, 64)?;
+                let mut diag_sum = 0;
+                for offset in 0..dim {
+                    diag_sum += cube.inner[offset][offset];
+                }
+                let num_triangles = diag_sum / 6;
+                csv.serialize(TriangleExpRes {
+                    graph_dim: dim,
+                    edge_prob: prob,
+                    num_triangles,
+                    trial,
+                })?;
             }
-            let num_triangles = diag_sum / 6;
-            csv.serialize(TriangleExpRes {
-                graph_dim: dim,
-                edge_prob: prob,
-                num_triangles,
-            })?;
         }
         Ok(())
     }
