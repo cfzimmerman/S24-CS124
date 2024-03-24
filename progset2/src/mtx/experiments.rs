@@ -24,7 +24,7 @@ const MIN_STRASSEN_CUTOFF: usize = 4;
 struct BaseExpRes {
     graph_dim: usize,
     base_cutoff: usize,
-    time_ms: f64,
+    time_secs: f64,
 }
 
 /// Configures and runs experiments on the effect of
@@ -66,7 +66,7 @@ impl BaseExperiment {
                 csv.serialize(BaseExpRes {
                     graph_dim: dim,
                     base_cutoff: cutoff,
-                    time_ms: Duration::as_secs_f64(&start.elapsed()),
+                    time_secs: Duration::as_secs_f64(&start.elapsed()),
                 })?;
                 cutoff /= 2;
             }

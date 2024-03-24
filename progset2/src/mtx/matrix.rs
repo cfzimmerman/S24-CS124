@@ -71,30 +71,6 @@ where
         Self::mul_rec_inner(left, right, base_cutoff, SliceMatrix::mul_strassen)
     }
 
-    /// Performs a recursive matrix multiplication algorithm. Takes care of
-    /// both error checking and padding.
-    fn mul_rec_inner(
-        left: &mut Matrix<T>,
-        right: &mut Matrix<T>,
-        base_cutoff: usize,
-        algo: RecMatrixMulAlgo<T>,
-    ) -> PsetRes<Matrix<T>> {
-        if base_cutoff < 3 {
-            return Err(PsetErr::Static("rec_mul base_cutoff must exceed 2"));
-        }
-        let left_pad = PadPow2::new(left);
-        let right_pad = PadPow2::new(right);
-
-        let left_sl: SliceMatrix<T> = (&*left).into();
-        let right_sl: SliceMatrix<T> = (&*right).into();
-        let mut res = algo(&left_sl, &right_sl, base_cutoff)?;
-
-        left_pad.undo(left);
-        right_pad.undo(right);
-        PadPow2::trim_dims(&mut res, left_pad.rows_init_ct, right_pad.cols_init_ct);
-        Ok(res)
-    }
-
     /// Builds an identity matrix
     /// For a usize matrix, diagon_val is 1, the value on the diagonal.
     pub fn identity(dim: usize, diagon_val: T) -> Matrix<T> {
@@ -120,23 +96,6 @@ where
     pub fn sub_in_place(&mut self, other: &Matrix<T>) -> PsetRes<&mut Self> {
         self.op_one_to_one_in_place(other, |l, r| l - r)?;
         Ok(self)
-    }
-
-    /// Performs actions for every parallel entry between the two matrices, storing
-    /// the results of operations back in self.
-    fn op_one_to_one_in_place(&mut self, other: &Matrix<T>, op: fn(&T, &T) -> T) -> PsetRes<()> {
-        if self.num_rows() != other.num_rows() || self.num_cols() != other.num_cols() {
-            return Err(PsetErr::Static(
-                "Cannot perform a one to one operation on matrices of different dimensions",
-            ));
-        }
-        for row in 0..self.inner.len() {
-            for col in 0..self.inner[0].len() {
-                // indexing won't panic because dimensions are checked above
-                self.inner[row][col] = op(&self.inner[row][col], &other.inner[row][col]);
-            }
-        }
-        Ok(())
     }
 
     /// Assumes self is the top left in a four-part matrix. Adds neighbors into self
@@ -166,6 +125,47 @@ where
                 .chain(bottom_right.inner.into_iter()),
         ) {
             left_row.extend(right_row);
+        }
+        Ok(())
+    }
+
+    /// Performs a recursive matrix multiplication algorithm. Takes care of
+    /// both error checking and padding.
+    fn mul_rec_inner(
+        left: &mut Matrix<T>,
+        right: &mut Matrix<T>,
+        base_cutoff: usize,
+        algo: RecMatrixMulAlgo<T>,
+    ) -> PsetRes<Matrix<T>> {
+        if base_cutoff < 3 {
+            return Err(PsetErr::Static("rec_mul base_cutoff must exceed 2"));
+        }
+        let left_pad = PadPow2::new(left);
+        let right_pad = PadPow2::new(right);
+
+        let left_sl: SliceMatrix<T> = (&*left).into();
+        let right_sl: SliceMatrix<T> = (&*right).into();
+        let mut res = algo(&left_sl, &right_sl, base_cutoff)?;
+
+        left_pad.undo(left);
+        right_pad.undo(right);
+        PadPow2::trim_dims(&mut res, left_pad.rows_init_ct, right_pad.cols_init_ct);
+        Ok(res)
+    }
+
+    /// Performs actions for every parallel entry between the two matrices, storing
+    /// the results of operations back in self.
+    fn op_one_to_one_in_place(&mut self, other: &Matrix<T>, op: fn(&T, &T) -> T) -> PsetRes<()> {
+        if self.num_rows() != other.num_rows() || self.num_cols() != other.num_cols() {
+            return Err(PsetErr::Static(
+                "Cannot perform a one to one operation on matrices of different dimensions",
+            ));
+        }
+        for row in 0..self.inner.len() {
+            for col in 0..self.inner[0].len() {
+                // indexing won't panic because dimensions are checked above
+                self.inner[row][col] = op(&self.inner[row][col], &other.inner[row][col]);
+            }
         }
         Ok(())
     }
